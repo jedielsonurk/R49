@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Romão Cred - Gestão de Crédito</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0b0b0b;
+            --bg-panel: #141414;
+            --bg-panel-light: #1a1a1a;
+            --border-color: #333333;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --primary: #cccccc;
+            --primary-hover: #e0e0e0;
+            --success: #2e7d32;
+            --success-bg: #1b5e20;
+            --danger: #d32f2f;
+            --danger-bg: #b71c1c;
+            --warning: #f9a825;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            background-color: #111111;
+            padding: 1rem;
+        }
+
+        .login-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            padding: 2.5rem;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.7);
+        }
+
+        .login-card h2 {
+            margin-bottom: 0.25rem;
+            text-align: center;
+            color: var(--text-main);
+            letter-spacing: 2px;
+            font-size: 1.8rem;
+        }
+
+        .login-card .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #app-screen {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        header {
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .brand h1 { font-size: 1.5rem; color: var(--text-main); }
+        .brand span { color: var(--text-muted); font-size: 0.9rem; }
+        .header-actions { display: flex; gap: 1rem; align-items: center; }
+
+        nav.tabs-nav {
+            background-color: var(--bg-panel-light);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn:hover { color: var(--text-main); background-color: rgba(255,255,255,0.02); }
+        .tab-btn.active {
+            color: var(--text-main);
+            border-bottom-color: var(--primary);
+            background-color: var(--bg-panel);
+            font-weight: 600;
+        }
+
+        main.content {
+            padding: 2rem;
+            flex: 1;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group.inline {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        label { display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem; }
+        input, select, textarea {
+            width: 100%;
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn.good { background-color: var(--success); color: #fff; }
+        .btn.danger { background-color: var(--danger); color: #fff; }
+        .btn.secondary { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); }
+        .btn.small { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .card-kpi { background-color: var(--bg-panel); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 6px; }
+        .card-kpi .label { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
+        .card-kpi .value { font-size: 1.8rem; font-weight: 700; margin-top: 0.5rem; }
+        .card-kpi .value.red { color: #ff5252; }
+        .card-kpi .value.green { color: #69f0ae; }
+
+        .row-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 2rem; }
+        .panel-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 6px; margin-bottom: 1.5rem; }
+        .panel-box h3 { margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-muted); background-color: rgba(255,255,255,0.01); }
+
+        .dias-semana-table {
+            width: 100%;
+            margin-top: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .dias-semana-table th, .dias-semana-table td {
+            text-align: center;
+            padding: 0.5rem;
+        }
+        .dias-semana-table input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .client-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 1rem; overflow: hidden; }
+        .client-header { background-color: var(--bg-panel-light); padding: 1rem 1.5rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .client-body { display: none; padding: 1.5rem; border-top: 1px solid var(--border-color); }
+        .client-card.open .client-body { display: block; }
+
+        .loan-box { background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem; }
+        .loan-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .loan-summary div span { display: block; font-size: 0.8rem; color: var(--text-muted); }
+        .loan-actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 4px; }
+
+        .status-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; cursor: pointer; }
+        .status-dot.pendente { background-color: var(--warning); }
+        .status-dot.atrasado { background-color: var(--danger); }
+        .status-dot.pago { background-color: var(--success); }
+        .status-dot.parcial { background-color: var(--warning); border: 2px solid #fff; }
+
+        .history-row { display: none; background-color: rgba(0,0,0,0.3); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background-color: var(--bg-panel); border: 1px solid var(--border-color); padding: 2rem; border-radius: 6px; width: 100%; max-width: 450px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
+
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
+        .toast { background-color: var(--bg-panel-light); border-left: 4px solid var(--primary); color: var(--text-main); padding: 1rem 1.5rem; margin-top: 10px; border-radius: 4px; min-width: 250px; }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <h2>ROMÃO CRED</h2>
+            <div class="subtitle">Empresa Simples de Crédito</div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Usuário</label>
+                    <input type="text" id="login-user" required autocomplete="off" placeholder="Digite o usuário">
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="login-pass" required placeholder="Digite a senha">
+                </div>
+                <button type="submit" class="btn" style="width:100%; margin-top: 0.5rem;">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-screen">
+        <header>
+            <div class="brand">
+                <h1>Romão Cred</h1>
+                <span>Empresa Simples de Crédito</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn secondary small" id="sync-btn">☁️ Exportar Backup</button>
+                <button class="btn danger small" id="logout-btn">Sair</button>
+            </div>
+        </header>
+
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-tab="tab-dashboard">Dashboard</button>
+            <button class="tab-btn" data-tab="tab-cobrancas">Cobranças do Dia</button>
+            <button class="tab-btn" data-tab="tab-caixa">Movimentação de Caixa</button>
+            <button class="tab-btn" data-tab="tab-depositos">Depósito Bancário</button>
+            <button class="tab-btn" data-tab="tab-cadastro">Cadastrar Dívida</button>
+            <button class="tab-btn" data-tab="tab-clientes" id="nav-btn-clientes">Clientes / Dívidas</button>
+            <button class="tab-btn" data-tab="tab-relatorios">Relatórios</button>
+            <button class="tab-btn" data-tab="tab-balancete">Balancete de Juros</button>
+        </nav>
+
+        <main class="content">
+            <div id="tab-dashboard" class="tab-content active">
+                <div class="grid-cards">
+                    <div class="card-kpi"><div class="label">Caixa (Saldo)</div><div class="value green" id="kpi-caixa">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Capital Puro na Rua</div><div class="value red" id="kpi-capital-rua">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Retorno Bruto Esperado</div><div class="value" id="kpi-retorno-esperado">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Lucro Projetado Pendente</div><div class="value green" id="kpi-lucro-esperado">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Vencendo em 3 dias</div><div class="value" id="kpi-vencendo-3d">0</div></div>
+                    <div class="card-kpi"><div class="label">Parcelas Atrasadas</div><div class="value red" id="kpi-atrasadas">0</div></div>
+                    <div class="card-kpi"><div class="label">Lucro Recebido (Semana)</div><div class="value green" id="kpi-lucro-semana">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Lucro Recebido (Mês)</div><div class="value green" id="kpi-lucro-mes">R$ 0,00</div></div>
+                </div>
+            </div>
+
+            <div id="tab-cobrancas" class="tab-content">
+                <h2 style="margin-bottom:0.5rem;">Cobranças do Dia</h2>
+                <div class="grid-cards" style="margin-bottom:1.5rem;">
+                    <div class="card-kpi"><div class="label">A Receber Hoje</div><div class="value" id="kpi-receber-hoje">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Total Atrasado</div><div class="value red" id="kpi-total-atrasado">R$ 0,00</div></div>
+                </div>
+                <div class="row-split">
+                    <div class="panel-box">
+                        <h3>📋 Recebíveis de Hoje</h3>
+                        <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parc.</th><th>Valor Saldo</th><th>Vencimento</th></tr></thead><tbody id="tbl-hoje-corpo"></tbody></table></div>
+                    </div>
+                    <div class="panel-box">
+                        <h3>⚠️ Inadimplentes / Atrasados</h3>
+                        <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parc.</th><th>Valor Saldo</th><th>Dias Atraso</th></tr></thead><tbody id="tbl-atrasados-corpo"></tbody></table></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-caixa" class="tab-content">
+                <div class="row-split">
+                    <div class="panel-box">
+                        <h3>Lançamento de Caixa</h3>
+                        <div class="form-group"><label>Valor (R$)</label><input type="number" step="0.01" id="caixa-valor" placeholder="0.00"></div>
+                        <div class="form-group"><label>Descrição</label><input type="text" id="caixa-desc" placeholder="Ex: Aporte"></div>
+                        <div style="display:flex; gap:1rem;">
+                            <button class="btn good" id="btn-injetar-caixa" style="flex:1;">💰 Injetar</button>
+                            <button class="btn danger" id="btn-retirar-caixa" style="flex:1;">💸 Retirar</button>
+                        </div>
+                    </div>
+                    <div class="panel-box">
+                        <h3>Últimas Movimentações</h3>
+                        <div class="table-responsive"><table><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead><tbody id="tbl-extrato-resumo"></tbody></table></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-depositos" class="tab-content">
+                <div class="row-split">
+                    <div class="panel-box">
+                        <h3>Anotar Depósito Bancário</h3>
+                        <form id="form-deposito">
+                            <div class="form-group"><label>Nome do Cliente</label><input type="text" id="dep-nome" required></div>
+                            <div class="form-group inline">
+                                <div><label>Valor (R$)</label><input type="number" step="0.01" id="dep-valor" required></div>
+                                <div><label>Data</label><input type="date" id="dep-data" required></div>
+                            </div>
+                            <div class="form-group"><label>Observação</label><input type="text" id="dep-obs"></div>
+                            <button type="submit" class="btn good" style="width:100%;">Salvar Depósito</button>
+                        </form>
+                    </div>
+                    <div class="panel-box">
+                        <h3>Registros</h3>
+                        <div class="form-group inline"><input type="text" id="filtro-dep-nome" placeholder="Filtrar por Nome"><input type="date" id="filtro-dep-data"></div>
+                        <div style="margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);" id="dep-meta-info">Total: R$ 0,00 | Qtd: 0</div>
+                        <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Data</th><th>Valor</th><th>Obs</th></tr></thead><tbody id="tbl-depositos-corpo"></tbody></table></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-cadastro" class="tab-content">
+                <div class="panel-box" style="max-width: 700px; margin: 0 auto;">
+                    <h3>Cadastrar Nova Dívida / Empréstimo</h3>
+                    <form id="form-cadastro-divida">
+                        <div class="form-group"><label>Nome do Cliente *</label><input type="text" id="cad-nome" required></div>
+                        <div class="form-group inline">
+                            <div><label>CPF/CNPJ</label><input type="text" id="cad-cpf"></div>
+                            <div><label>Telefone</label><input type="text" id="cad-tel" placeholder="(62) 99999-9999"></div>
+                        </div>
+                        <div class="form-group inline">
+                            <div><label>Valor Emprestado (Capital Puro R$) *</label><input type="number" step="0.01" id="cad-v-emprestado" required></div>
+                            <div><label>Valor Total com Juros (R$) *</label><input type="number" step="0.01" id="cad-v-total" required></div>
+                        </div>
+                        <div class="form-group inline">
+                            <div><label>Quantidade de Parcelas *</label><input type="number" id="cad-qtd-parcelas" required min="1"></div>
+                            <div><label>Intervalo Fixo (Dias) *</label><input type="number" id="cad-intervalo" value="7" required min="1"></div>
+                        </div>
+                        <div class="form-group inline">
+                            <div><label>Data de Início *</label><input type="date" id="cad-data-inicio" required></div>
+                            <div><label>Data Final (Opcional limite)</label><input type="date" id="cad-data-final"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Dias da Semana Permitidos para Cobrança (Selecione):</label>
+                            <table class="dias-semana-table">
+                                <thead>
+                                    <tr>
+                                        <th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sáb</th><th>Dom</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="checkbox" id="chk-seg" checked></td>
+                                        <td><input type="checkbox" id="chk-ter" checked></td>
+                                        <td><input type="checkbox" id="chk-qua" checked></td>
+                                        <td><input type="checkbox" id="chk-qui" checked></td>
+                                        <td><input type="checkbox" id="chk-sex" checked></td>
+                                        <td><input type="checkbox" id="chk-sab" checked></td>
+                                        <td><input type="checkbox" id="chk-dom"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="form-group"><label>Observações</label><textarea id="cad-obs" rows="2"></textarea></div>
+                        <button type="submit" class="btn good" style="width:100%;">Gerar Empréstimo</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="tab-clientes" class="tab-content">
+                <h2 style="margin-bottom:1rem;">Gestão de Clientes e Dívidas</h2>
+                <div id="clientes-lista-container"></div>
+            </div>
+
+            <div id="tab-relatorios" class="tab-content">
+                <div class="panel-box">
+                    <h3>📜 Extrato Completo de Caixa</h3>
+                    <div class="table-responsive" style="max-height: 250px;"><table><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead><tbody id="tbl-rel-caixa"></tbody></table></div>
+                </div>
+                <div class="panel-box">
+                    <h3>💰 Histórico de Pagamentos</h3>
+                    <div class="table-responsive" style="max-height: 250px;"><table><thead><tr><th>Data</th><th>Cliente</th><th>Parcela</th><th>Valor</th><th>Obs</th></tr></thead><tbody id="tbl-rel-pagamentos"></tbody></table></div>
+                </div>
+                <div class="panel-box">
+                    <h3>⚠️ Inadimplência Geral</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parc.</th><th>Vencimento</th><th>Valor Base</th><th>Saldo</th><th>Atraso</th></tr></thead><tbody id="tbl-rel-inadimplencia"></tbody></table></div>
+                </div>
+            </div>
+
+            <div id="tab-balancete" class="tab-content">
+                <h2 style="margin-bottom:1rem;">Balancete de Juros Recebidos</h2>
+                <div id="balancete-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="modal-edicao">
+        <div class="modal-content">
+            <h3>Editar Valor da Parcela</h3><br>
+            <div class="form-group"><label>Novo Valor (R$)</label><input type="number" step="0.01" id="modal-parc-valor"></div>
+            <input type="hidden" id="modal-parc-cli-id"><input type="hidden" id="modal-parc-emp-id"><input type="hidden" id="modal-parc-id">
+            <div class="modal-buttons">
+                <button class="btn secondary" id="modal-btn-cancelar">Cancelar</button>
+                <button class="btn good" id="modal-btn-salvar">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let state = { caixa: 0, clientes: [], transacoes: [], depositos: [] };
+            // Objeto auxiliar para lembrar quais cards de clientes estavam abertos antes de recarregar a tela
+            let openCardsState = {};
+
+            // ===== SUPABASE (R49): substitui o localStorage como fonte de dados =====
+            const SUPABASE_URL = 'https://aprhvjslvevqfflcjgwh.supabase.co';
+            const SUPABASE_ANON_KEY = 'sb_publishable_KXA5TLVwAS0TMJKRpaXFIA_K_ULjVL4';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const SUPABASE_ROW_ID = 'main';
+
+            let salvamentoEmAndamento = false;
+            let salvamentoPendente = false;
+
+            async function carregarDados() {
+                const { data: row, error } = await supabase
+                    .from('app_state')
+                    .select('data')
+                    .eq('id', SUPABASE_ROW_ID)
+                    .maybeSingle();
+
+                if (error) {
+                    showToast("Erro ao carregar dados da nuvem: " + error.message, "error");
+                } else if (row && row.data) {
+                    state = row.data;
+                    if(!state.clientes) state.clientes = [];
+                    if(!state.transacoes) state.transacoes = [];
+                    if(!state.depositos) state.depositos = [];
+                    if(typeof state.caixa !== 'number') state.caixa = 0;
+                } else {
+                    // Nenhum registro ainda existe no Supabase: cria o registro inicial
+                    await supabase.from('app_state').upsert({
+                        id: SUPABASE_ROW_ID,
+                        data: state,
+                        updated_at: new Date().toISOString()
+                    });
+                }
+                renderizarTudo();
+            }
+
+            async function salvarDados() {
+                // Renderiza imediatamente para a UI responder na hora,
+                // sem esperar a gravação na nuvem terminar.
+                renderizarTudo();
+
+                // Evita disparar vários upserts simultâneos em sequência rápida de cliques;
+                // se já existe um salvamento em andamento, agenda um novo logo depois dele.
+                if (salvamentoEmAndamento) {
+                    salvamentoPendente = true;
+                    return;
+                }
+                salvamentoEmAndamento = true;
+
+                const { error } = await supabase
+                    .from('app_state')
+                    .upsert({ id: SUPABASE_ROW_ID, data: state, updated_at: new Date().toISOString() });
+
+                salvamentoEmAndamento = false;
+
+                if (error) {
+                    showToast("Erro ao salvar na nuvem: " + error.message, "error");
+                }
+
+                if (salvamentoPendente) {
+                    salvamentoPendente = false;
+                    salvarDados();
+                }
+            }
+
+            function showToast(message, type = "info") {
+                const container = document.getElementById('toast-container');
+                if(!container) return;
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.innerText = message;
+                container.appendChild(toast);
+                setTimeout(() => { toast.remove(); }, 4000);
+            }
+
+            function formatReal(v) { return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+            function parseInputDate(str) { if(!str) return new Date(); const p = str.split('-'); return new Date(p[0], p[1] - 1, p[2], 12, 0, 0); }
+            function formatDateBR(ds) { if(!ds) return ''; return parseInputDate(ds).toLocaleDateString('pt-BR'); }
+            function getDiaSemanaExtenso(ds) { const d = parseInputDate(ds); return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d.getDay()]; }
+            
+            function calcularDiasAtraso(dv) {
+                const hoje = new Date(); hoje.setHours(0,0,0,0);
+                const venc = parseInputDate(dv); venc.setHours(0,0,0,0);
+                const diff = hoje - venc;
+                return diff <= 0 ? 0 : Math.floor(diff / (1000 * 60 * 60 * 24));
+            }
+
+            // LOGIN
+            // Normaliza texto para evitar falha de login por causa de acentuação
+            // codificada de formas diferentes (ex: "ã" digitado em celular/teclados
+            // diferentes pode virar "a" + acento combinado em vez do caractere único),
+            // espaços extras no início/fim, ou diferença de maiúscula/minúscula.
+            function normalizarTexto(str) {
+                return (str || '').normalize('NFC').trim().toLowerCase();
+            }
+
+            document.getElementById('login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const userDigitado = normalizarTexto(document.getElementById('login-user').value);
+                const passDigitada = document.getElementById('login-pass').value.trim();
+                if (userDigitado === normalizarTexto("Romão") && passDigitada === "Rcompany2026@") {
+                    try {
+                        sessionStorage.setItem('romao_session', 'active');
+                    } catch(err) {
+                        showToast("Erro: o navegador bloqueou o armazenamento de sessão (sessionStorage). Abra o arquivo .html diretamente no navegador (Chrome/Edge/Firefox), não numa prévia embutida.", "error");
+                        return;
+                    }
+                    verificarSessao();
+                    showToast("Bem-vindo de volta, Romão!", "success");
+                } else {
+                    showToast("Usuário ou Senha incorretos.", "error");
+                }
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                try { sessionStorage.removeItem('romao_session'); } catch(err) {}
+                verificarSessao();
+            });
+
+            function verificarSessao() {
+                let ativo = false;
+                try {
+                    ativo = sessionStorage.getItem('romao_session') === 'active';
+                } catch(err) {
+                    showToast("Erro: este ambiente não permite sessionStorage. Baixe o arquivo e abra-o diretamente no navegador.", "error");
+                }
+                if (ativo) {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-screen').style.display = 'flex';
+                    carregarDados();
+                } else {
+                    document.getElementById('login-screen').style.display = 'flex';
+                    document.getElementById('app-screen').style.display = 'none';
+                }
+            }
+
+            // ABAS
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(this.getAttribute('data-tab')).classList.add('active');
+                });
+            });
+
+            function atualizarStatusParcela(p) {
+                if (p.pago >= (p.valor - 0.01)) p.status = 'pago';
+                else if (p.pago > 0) p.status = 'parcial';
+                else p.status = 'pendente';
+            }
+
+            function gerarDatasParcelasEstrategico(dInicio, dFinal, qtd, intervalo, diasMarcados) {
+                let datas = [];
+                let curr = parseInputDate(dInicio);
+                let limiteFinal = dFinal ? parseInputDate(dFinal) : null;
+                if (diasMarcados.length === 0) diasMarcados = [0,1,2,3,4,5,6];
+
+                while (datas.length < qtd) {
+                    if (datas.length > 0) {
+                        curr.setDate(curr.getDate() + Number(intervalo));
+                    }
+                    if (limiteFinal && curr > limiteFinal) {
+                        break;
+                    }
+                    while (!diasMarcados.includes(curr.getDay())) {
+                        curr.setDate(curr.getDate() + 1);
+                    }
+                    datas.push(`${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-${String(curr.getDate()).padStart(2, '0')}`);
+                }
+                return datas;
+            }
+
+            document.getElementById('form-cadastro-divida').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const nome = document.getElementById('cad-nome').value.trim();
+                const vEmprestado = parseFloat(document.getElementById('cad-v-emprestado').value);
+                const vTotal = parseFloat(document.getElementById('cad-v-total').value);
+                const qtd = parseInt(document.getElementById('cad-qtd-parcelas').value);
+                const dInicio = document.getElementById('cad-data-inicio').value;
+                const dFinal = document.getElementById('cad-data-final').value;
+                const intervalo = parseInt(document.getElementById('cad-intervalo').value);
+
+                let diasMarcados = [];
+                if(document.getElementById('chk-dom').checked) diasMarcados.push(0);
+                if(document.getElementById('chk-seg').checked) diasMarcados.push(1);
+                if(document.getElementById('chk-ter').checked) diasMarcados.push(2);
+                if(document.getElementById('chk-qua').checked) diasMarcados.push(3);
+                if(document.getElementById('chk-qui').checked) diasMarcados.push(4);
+                if(document.getElementById('chk-sex').checked) diasMarcados.push(5);
+                if(document.getElementById('chk-sab').checked) diasMarcados.push(6);
+
+                if (vTotal <= vEmprestado) return showToast("O Valor Total deve ser maior que o Emprestado.", "error");
+
+                const dates = gerarDatasParcelasEstrategico(dInicio, dFinal, qtd, intervalo, diasMarcados);
+                if(dates.length < qtd) {
+                    return showToast(`A data final estipulada é muito curta para gerar as ${qtd} parcelas nos dias permitidos.`, "error");
+                }
+
+                const valorParc = parseFloat((vTotal / qtd).toFixed(2));
+                const basePuroParc = parseFloat((vEmprestado / qtd).toFixed(2));
+
+                let parcelas = dates.map((dt, i) => ({
+                    id: 'par_' + Math.random().toString(36).substr(2, 9) + Date.now(),
+                    numero: i + 1,
+                    dataVencimento: dt,
+                    valor: valorParc,
+                    valorBase: valorParc,
+                    basePuro: basePuroParc,
+                    pago: 0,
+                    status: 'pendente',
+                    jurosExtras: 0,
+                    historico: []
+                }));
+
+                let novoEmp = {
+                    id: 'emp_' + Math.random().toString(36).substr(2, 9) + Date.now(),
+                    principal: vEmprestado,
+                    valorTotal: vTotal,
+                    qtdParcelas: qtd,
+                    dataInicio: dInicio,
+                    dataFinal: dates[dates.length - 1],
+                    intervaloDias: intervalo,
+                    parcelas: parcelas
+                };
+
+                let cli = state.clientes.find(c => c.nome.toLowerCase() === nome.toLowerCase());
+                if (!cli) {
+                    cli = { id: 'cli_' + Math.random().toString(36).substr(2, 9) + Date.now(), nome: nome, cpf: document.getElementById('cad-cpf').value, telefone: document.getElementById('cad-tel').value, obs: document.getElementById('cad-obs').value, emprestimos: [] };
+                    state.clientes.push(cli);
+                }
+                cli.emprestimos.push(novoEmp);
+                
+                state.caixa -= vEmprestado;
+                registrarTransacao('retirada', vEmprestado, `Empréstimo concedido a ${nome}`);
+
+                salvarDados();
+                showToast("Dívida registrada e parcelas geradas com sucesso!", "success");
+                this.reset();
+                document.getElementById('cad-intervalo').value = 7;
+                document.getElementById('nav-btn-clientes').click();
+            });
+
+            function registrarTransacao(tipo, valor, desc) {
+                state.transacoes.unshift({ tipo, valor, data: new Date().toISOString(), descricao: desc });
+            }
+
+            document.getElementById('btn-injetar-caixa').addEventListener('click', function() {
+                const val = parseFloat(document.getElementById('caixa-valor').value);
+                if(isNaN(val) || val <= 0) return showToast("Valor inválido", "error");
+                state.caixa += val;
+                registrarTransacao('injecao', val, document.getElementById('caixa-desc').value || "Injeção manual");
+                salvarDados();
+                document.getElementById('caixa-valor').value = ''; document.getElementById('caixa-desc').value = '';
+                showToast("Caixa abastecido!", "success");
+            });
+
+            document.getElementById('btn-retirar-caixa').addEventListener('click', function() {
+                const val = parseFloat(document.getElementById('caixa-valor').value);
+                if(isNaN(val) || val <= 0) return showToast("Valor inválido", "error");
+                state.caixa -= val;
+                registrarTransacao('retirada', val, document.getElementById('caixa-desc').value || "Retirada manual");
+                salvarDados();
+                document.getElementById('caixa-valor').value = ''; document.getElementById('caixa-desc').value = '';
+                showToast("Retirada efetuada!", "warning");
+            });
+
+            document.getElementById('form-deposito').addEventListener('submit', function(e) {
+                e.preventDefault();
+                state.depositos.unshift({ id: 'dep_' + Math.random().toString(36).substr(2, 9) + Date.now(), nome: document.getElementById('dep-nome').value, valor: parseFloat(document.getElementById('dep-valor').value), data: document.getElementById('dep-data').value, obs: document.getElementById('dep-obs').value });
+                salvarDados();
+                this.reset();
+                showToast("Depósito anotado!", "success");
+            });
+
+            document.getElementById('filtro-dep-nome').addEventListener('input', () => renderizarTudo());
+            document.getElementById('filtro-dep-data').addEventListener('change', () => renderizarTudo());
+
+            window.aplicarAbate = function(cliId, empId) {
+                const inp = document.getElementById(`abate-${empId}`);
+                let val = parseFloat(inp.value);
+                if (isNaN(val) || val <= 0) return showToast("Valor inválido", "error");
+
+                let cli = state.clientes.find(c => c.id === cliId);
+                let emp = cli.emprestimos.find(e => e.id === empId);
+                let saldoTotal = emp.parcelas.reduce((acc, p) => acc + (p.valor - p.pago), 0);
+
+                if (saldoTotal <= 0) return showToast("Dívida já quitada", "error");
+                if (val > saldoTotal) { val = saldoTotal; }
+
+                let rest = val;
+                state.caixa += val;
+                registrarTransacao('recebimento', val, `Recebimento Parcela - ${cli.nome}`);
+
+                let sorted = [...emp.parcelas].sort((a,b) => parseInputDate(a.dataVencimento) - parseInputDate(b.dataVencimento));
+                for (let p of sorted) {
+                    if (rest <= 0) break;
+                    let sP = p.valor - p.pago;
+                    if (sP > 0) {
+                        let appl = Math.min(rest, sP);
+                        p.pago = parseFloat((p.pago + appl).toFixed(2));
+                        rest = parseFloat((rest - appl).toFixed(2));
+                        p.historico.push({ valor: appl, data: new Date().toISOString().split('T')[0], obs: "Pagamento recebido" });
+                        atualizarStatusParcela(p);
+                    }
+                }
+                inp.value = '';
+                salvarDados();
+                showToast("Pagamento abatido com sucesso!", "success");
+            };
+
+            window.aplicarJurosEmp = function(cliId, empId) {
+                const taxInput = document.getElementById(`juros-taxa-${empId}`);
+                let pct = parseFloat(taxInput.value);
+                if(isNaN(pct) || pct < 0) return showToast("Digite uma taxa de juros válida.", "error");
+
+                let taxa = pct / 100;
+                let cli = state.clientes.find(c => c.id === cliId);
+                let emp = cli.emprestimos.find(e => e.id === empId);
+                let added = 0;
+
+                emp.parcelas.forEach(p => {
+                    let dias = calcularDiasAtraso(p.dataVencimento);
+                    if (dias > 0 && p.pago < p.valor) {
+                        let nV = parseFloat((p.valorBase * Math.pow((1 + taxa), dias)).toFixed(2));
+                        let diff = nV - p.valor;
+                        if (diff > 0) { 
+                            added += diff; 
+                            p.valor = nV; 
+                            p.jurosExtras = parseFloat((nV - p.valorBase).toFixed(2)); 
+                            atualizarStatusParcela(p); 
+                        }
+                    }
+                });
+
+                if (added > 0) { 
+                    salvarDados(); 
+                    showToast(`Juros de ${pct}% aplicados com sucesso! (+${formatReal(added)})`, "success"); 
+                } else { 
+                    showToast("Nenhuma parcela atrasada elegível para aplicação de juros.", "info"); 
+                }
+            };
+
+            // CORREÇÃO DO BUG: Event.stopPropagation() previne que o clique atinja o Header e feche/abra as coisas sozinhos
+            window.ciclarStatus = function(e, cliId, empId, parcId) {
+                if(e) e.stopPropagation(); // Trava a propagação imediatamente
+                
+                let cli = state.clientes.find(c => c.id === cliId);
+                let emp = cli.emprestimos.find(e => e.id === empId);
+                let p = emp.parcelas.find(x => x.id === parcId);
+                
+                if(p.status !== 'pago') {
+                    let diff = p.valor - p.pago;
+                    if(diff > 0) {
+                        p.pago = p.valor;
+                        state.caixa += diff;
+                        registrarTransacao('recebimento', diff, `Marcado Pago - ${cli.nome} Parc ${p.numero}`);
+                        p.historico = [{ valor: p.valor, data: new Date().toISOString().split('T')[0], obs: "Baixa manual total" }];
+                    }
+                    p.status = 'pago';
+                    showToast("Parcela marcada como paga!", "success");
+                } else {
+                    if(p.pago > 0) {
+                        state.caixa -= p.pago;
+                        registrarTransacao('retirada', p.pago, `Estorno de Parcela - ${cli.nome} Parc ${p.numero}`);
+                        p.pago = 0;
+                    }
+                    p.historico = []; 
+                    p.status = 'pendente';
+                    showToast("Pagamento estornado com sucesso!", "warning");
+                }
+                salvarDados();
+            };
+
+            window.abrirEditarParcela = function(cliId, empId, parcId, val) {
+                document.getElementById('modal-parc-cli-id').value = cliId; document.getElementById('modal-parc-emp-id').value = empId; document.getElementById('modal-parc-id').value = parcId; document.getElementById('modal-parc-valor').value = val;
+                document.getElementById('modal-edicao').style.display = 'flex';
+            };
+
+            document.getElementById('modal-btn-cancelar').addEventListener('click', () => document.getElementById('modal-edicao').style.display = 'none');
+            document.getElementById('modal-btn-salvar').addEventListener('click', () => {
+                const cId = document.getElementById('modal-parc-cli-id').value; const eId = document.getElementById('modal-parc-emp-id').value; const pId = document.getElementById('modal-parc-id').value; const nV = parseFloat(document.getElementById('modal-parc-valor').value);
+                if(isNaN(nV) || nV <= 0) return;
+                let p = state.clientes.find(c => c.id === cId).emprestimos.find(e => e.id === eId).parcelas.find(x => x.id === pId);
+                p.valor = nV; 
+                atualizarStatusParcela(p);
+                document.getElementById('modal-edicao').style.display = 'none'; salvarDados();
+            });
+
+            window.toggleHistorico = function(id) { const el = document.getElementById(`hist-row-${id}`); el.style.display = (el.style.display === 'none'||el.style.display==='')?'table-row':'none'; };
+            
+            // Gerencia o estado individual do card para salvar se estava recolhido ou aberto
+            window.toggleClienteCollapse = function(id) { 
+                const card = document.getElementById(`cli-card-${id}`);
+                if (card.classList.contains('open')) {
+                    card.classList.remove('open');
+                    openCardsState[id] = false;
+                } else {
+                    card.classList.add('open');
+                    openCardsState[id] = true;
+                }
+            };
+            
+            window.excluirEmprestimo = function(cId, eId) {
+                if(!confirm("Remover contrato permanentemente?")) return;
+                let cli = state.clientes.find(c => c.id === cId);
+                let idx = cli.emprestimos.findIndex(e => e.id === eId);
+                cli.emprestimos.splice(idx,1); 
+                salvarDados();
+            };
+
+            window.excluirCliente = function(e, cId) {
+                if(e) e.stopPropagation(); 
+                if(!confirm("Excluir cliente e todo histórico dele?")) return;
+                let idx = state.clientes.findIndex(c => c.id === cId);
+                state.clientes.splice(idx,1); 
+                salvarDados();
+            };
+
+            function renderizarTudo() {
+                const hj = new Date().toISOString().split('T')[0];
+                let capRua = 0, retEsp = 0, v3d = 0, parAtr = 0, lucSem = 0, lucMes = 0, recHj = 0, totAtr = 0;
+                let htmlClis = '', htmlHj = '', htmlAtr = '', htmlInad = '', bAgr = {};
+                
+                const dHj = new Date(), d7 = new Date(); d7.setDate(dHj.getDate()-7); 
+                const initM = new Date(dHj.getFullYear(), dHj.getMonth(), 1);
+
+                (state.clientes || []).forEach(cli => {
+                    let htmlEmps = '';
+                    
+                    // CORREÇÃO: por padrão, se o cliente ainda não tem estado registrado
+                    // (ex: primeira renderização, ou cliente novo), o card começa FECHADO.
+                    // Antes estava "true" (aberto), o que fazia parecer que o sistema
+                    // "abria tudo sozinho" a cada atualização/render.
+                    if(openCardsState[cli.id] === undefined) openCardsState[cli.id] = false;
+                    let isOpenClass = openCardsState[cli.id] ? 'open' : '';
+
+                    (cli.emprestimos || []).forEach(emp => {
+                        let tP = 0, tS = 0;
+                        let htmlParcs = '';
+                        
+                        (emp.parcelas || []).forEach(p => {
+                            let sP = p.valor - p.pago; 
+                            tP += p.pago; 
+                            tS += sP;
+                            
+                            if(p.pago < p.basePuro) {
+                                capRua += (p.basePuro - p.pago);
+                            }
+                            retEsp += sP;
+                            
+                            let dAtr = calcularDiasAtraso(p.dataVencimento);
+
+                            if(sP > 0) {
+                                if(dAtr > 0) {
+                                    parAtr++; totAtr += sP;
+                                    htmlAtr += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td>${formatReal(sP)}</td><td>${dAtr} dias</td></tr>`;
+                                    htmlInad += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td>${formatDateBR(p.dataVencimento)}</td><td>${formatReal(p.valorBase)}</td><td>${formatReal(sP)}</td><td>${dAtr}</td></tr>`;
+                                } else {
+                                    if(p.dataVencimento === hj) { recHj += sP; htmlHj += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td>${formatReal(sP)}</td><td>Hoje</td></tr>`; }
+                                    if(dAtr === 0 && parseInputDate(p.dataVencimento) <= new Date(dHj.getTime() + 3*24*60*60*1000)) v3d++;
+                                }
+                            }
+
+                            // Calcula o lucro (juros) de cada pagamento em ordem cronológica, acumulando
+                            // corretamente o quanto já havia sido pago antes de cada registro do histórico.
+                            // O lucro é atribuído ao mês/data de VENCIMENTO da parcela, não à data em que
+                            // o pagamento foi lançado no sistema — isso evita que lançamentos feitos hoje
+                            // para parcelas antigas "empurrem" o lucro para o mês atual.
+                            let historicoOrdenado = [...(p.historico || [])].sort((a,b) => parseInputDate(a.data) - parseInputDate(b.data));
+                            let acumuladoAntes = 0;
+                            historicoOrdenado.forEach(h => {
+                                let acumuladoDepois = parseFloat((acumuladoAntes + h.valor).toFixed(2));
+
+                                let lucroNessePagamento = 0;
+                                if (acumuladoDepois > p.basePuro) {
+                                    let inicioDoLucro = Math.max(acumuladoAntes, p.basePuro);
+                                    lucroNessePagamento = parseFloat((acumuladoDepois - inicioDoLucro).toFixed(2));
+                                }
+                                acumuladoAntes = acumuladoDepois;
+
+                                if(lucroNessePagamento > 0) {
+                                    let dRef = parseInputDate(p.dataVencimento);
+                                    if(dRef >= d7) lucSem += lucroNessePagamento; 
+                                    if(dRef >= initM) lucMes += lucroNessePagamento;
+                                    
+                                    let mesAno = p.dataVencimento.substring(0,7);
+                                    if(!bAgr[mesAno]) bAgr[mesAno] = { total: 0, itens: [] };
+                                    bAgr[mesAno].total += lucroNessePagamento;
+                                    bAgr[mesAno].itens.push({ cliente: cli.nome, parcela: p.numero, vencimento: p.dataVencimento, dataPagamento: h.data, juro: lucroNessePagamento });
+                                }
+                            });
+
+                            let hHtml = (p.historico || []).map(h => `<div>• Recebido ${formatReal(h.valor)} em ${formatDateBR(h.data)}</div>`).join('') || '<div>Sem registros de pagamento.</div>';
+                            htmlParcs += `
+                                <tr>
+                                    <td>${p.numero}</td><td>${formatDateBR(p.dataVencimento)} <small>(${getDiaSemanaExtenso(p.dataVencimento)})</small></td><td>${formatReal(p.valor)}</td><td>${formatReal(p.pago)}</td><td style="color:${sP>0?'#ff5252':'#69f0ae'}">${formatReal(sP)}</td>
+                                    <td><span class="status-dot ${p.status} ${dAtr>0&&p.pago<p.valor?'atrasado':''}" onclick="ciclarStatus(event, '${cli.id}', '${emp.id}', '${p.id}')"></span></td>
+                                    <td><button class="btn secondary small" style="padding:2px 6px;" onclick="abrirEditarParcela('${cli.id}','${emp.id}','${p.id}', ${p.valor})">✏️</button> <button class="btn secondary small" style="padding:2px 6px;" onclick="toggleHistorico('${p.id}')">📜</button></td>
+                                </tr>
+                                <tr class="history-row" id="hist-row-${p.id}"><td colspan="7">${hHtml}</td></tr>`;
+                        });
+
+                        htmlEmps += `
+                            <div class="loan-box">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                                    <h4 style="color:var(--text-muted)">Contrato: de ${formatDateBR(emp.dataInicio)} até ${formatDateBR(emp.dataFinal)}</h4>
+                                    <button class="btn danger small" onclick="excluirEmprestimo('${cli.id}', '${emp.id}')">🗑 Remover Contrato</button>
+                                </div>
+                                <div class="loan-summary">
+                                    <div><span>Total Previsto</span><strong>${formatReal(emp.valorTotal)}</strong></div><div><span>Total Pago</span><strong style="color:#69f0ae">${formatReal(tP)}</strong></div><div><span>Saldo Restante</span><strong style="color:${tS>0?'#ff5252':'#69f0ae'}">${formatReal(tS)}</strong></div>
+                                </div>
+                                <div class="loan-actions">
+                                    <input type="number" step="0.01" id="abate-${emp.id}" style="width:110px; padding:0.4rem;" placeholder="0.00">
+                                    <button class="btn good small" onclick="aplicarAbate('${cli.id}', '${emp.id}')">💰 Receber / Abater</button>
+                                    
+                                    <div style="display:inline-flex; align-items:center; gap:0.3rem; margin-left:auto; border-left:1px solid var(--border-color); padding-left:1rem;">
+                                        <input type="number" step="0.1" id="juros-taxa-${emp.id}" value="3" style="width:70px; padding:0.4rem; text-align:center;" placeholder="%">
+                                        <label style="margin:0; font-size:0.85rem;">%</label>
+                                        <button class="btn danger small" onclick="aplicarJurosEmp('${cli.id}', '${emp.id}')">⚡ Aplicar Juros</button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive"><table><thead><tr><th>#</th><th>Vencimento</th><th>Valor Atual</th><th>Pago</th><th>Saldo</th><th>St</th><th>Ações</th></tr></thead><tbody>${htmlParcs}</tbody></table></div>
+                            </div>`;
+                    });
+
+                    htmlClis += `
+                        <div class="client-card ${isOpenClass}" id="cli-card-${cli.id}">
+                            <div class="client-header" onclick="toggleClienteCollapse('${cli.id}')">
+                                <div><strong style="font-size:1.1rem;">${cli.nome}</strong> <span style="font-size:0.8rem; color:var(--text-muted); margin-left:10px;">${cli.telefone||''}</span></div>
+                                <button class="btn danger small" onclick="excluirCliente(event, '${cli.id}')">🗑 Excluir Cliente</button>
+                            </div>
+                            <div class="client-body">${htmlEmps || '<p style="color:var(--text-muted)">Nenhum contrato ativo para este cliente.</p>'}</div>
+                        </div>`;
+                });
+
+                document.getElementById('kpi-caixa').innerText = formatReal(state.caixa || 0);
+                document.getElementById('kpi-capital-rua').innerText = formatReal(capRua);
+                document.getElementById('kpi-retorno-esperado').innerText = formatReal(retEsp);
+                document.getElementById('kpi-lucro-esperado').innerText = formatReal(Math.max(0, retEsp - capRua));
+                document.getElementById('kpi-vencendo-3d').innerText = v3d; 
+                document.getElementById('kpi-atrasadas').innerText = parAtr;
+                document.getElementById('kpi-lucro-semana').innerText = formatReal(lucSem); 
+                document.getElementById('kpi-lucro-mes').innerText = formatReal(lucMes);
+                document.getElementById('kpi-receber-hoje').innerText = formatReal(recHj); 
+                document.getElementById('kpi-total-atrasado').innerText = formatReal(totAtr);
+                
+                document.getElementById('tbl-hoje-corpo').innerHTML = htmlHj || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nada a receber hoje.</td></tr>';
+                document.getElementById('tbl-atrasados-corpo').innerHTML = htmlAtr || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nenhum atraso pendente.</td></tr>';
+                document.getElementById('clientes-lista-container').innerHTML = htmlClis || '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nenhum cliente cadastrado.</p>';
+
+                let hEx = ''; 
+                (state.transacoes || []).slice(0, 6).forEach(t => { 
+                    let cl = t.tipo==='injecao'||t.tipo==='recebimento'?'#69f0ae':'#ff5252'; 
+                    hEx += `<tr><td>${new Date(t.data).toLocaleDateString()}</td><td><span style="color:${cl}">${t.tipo}</span></td><td>${t.descricao}</td><td style="color:${cl}">${formatReal(t.valor)}</td></tr>`; 
+                });
+                document.getElementById('tbl-extrato-resumo').innerHTML = hEx || '<tr><td colspan="4" style="text-align:center;">Sem movimentos no caixa.</td></tr>';
+
+                let hDep = ''; 
+                const fN = document.getElementById('filtro-dep-nome').value.toLowerCase(); 
+                const fD = document.getElementById('filtro-dep-data').value; 
+                let tDep = 0, cDep = 0;
+                (state.depositos || []).forEach(d => { 
+                    if(d.nome.toLowerCase().includes(fN) && (!fD || d.data === fD)) { 
+                        tDep += d.valor; cDep++; 
+                        hDep += `<tr><td>${d.nome}</td><td>${formatDateBR(d.data)}</td><td>${formatReal(d.valor)}</td><td>${d.obs||''}</td></tr>`; 
+                    } 
+                });
+                document.getElementById('tbl-depositos-corpo').innerHTML = hDep || '<tr><td colspan="4" style="text-align:center;">Nenhum depósito bancário encontrado.</td></tr>';
+                document.getElementById('dep-meta-info').innerText = `Total: ${formatReal(tDep)} | Qtd: ${cDep}`;
+
+                let hRC = ''; 
+                (state.transacoes || []).forEach(t => { 
+                    let cl = t.tipo==='injecao'||t.tipo==='recebimento'?'#69f0ae':'#ff5252'; 
+                    hRC += `<tr><td>${new Date(t.data).toLocaleString()}</td><td><span style="color:${cl}">${t.tipo}</span></td><td>${t.descricao}</td><td style="color:${cl}">${formatReal(t.valor)}</td></tr>`; 
+                });
+                document.getElementById('tbl-rel-caixa').innerHTML = hRC || '<tr><td colspan="4">Sem dados históricos.</td></tr>';
+
+                let hRP = ''; 
+                (state.clientes || []).forEach(c => (c.emprestimos || []).forEach(e => (e.parcelas || []).forEach(p => (p.historico || []).forEach(h => { 
+                    hRP += `<tr><td>${formatDateBR(h.data)}</td><td>${c.nome}</td><td>Parc. ${p.numero}</td><td>${formatReal(h.valor)}</td><td>${h.obs}</td></tr>`; 
+                }))));
+                document.getElementById('tbl-rel-pagamentos').innerHTML = hRP || '<tr><td colspan="5">Nenhum pagamento registrado ainda.</td></tr>';
+                document.getElementById('tbl-rel-inadimplencia').innerHTML = htmlInad || '<tr><td colspan="6" style="text-align:center;">Nenhum inadimplente.</td></tr>';
+
+                let hBal = ''; 
+                Object.keys(bAgr).sort((a,b)=>b.localeCompare(a)).forEach(m => {
+                    let sub = bAgr[m].itens.map(i => `<tr><td>${i.cliente}</td><td>Parcela ${i.parcela}</td><td>Venc. ${formatDateBR(i.vencimento)}</td><td>Pago em ${formatDateBR(i.dataPagamento)}</td><td style="color:#69f0ae">+ ${formatReal(i.juro)}</td></tr>`).join('');
+                    hBal += `<div class="panel-box"><div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;"><h3>Mês: ${m.split('-')[1]}/${m.split('-')[0]}</h3><strong style="color:#69f0ae">Lucro Total: ${formatReal(bAgr[m].total)}</strong></div><div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Vencimento</th><th>Pagamento</th><th>Lucro</th></tr></thead><tbody>${sub}</tbody></table></div></div>`;
+                });
+                document.getElementById('balancete-container').innerHTML = hBal || '<p style="color:var(--text-muted)">Nenhum lucro de juros recebido no período.</p>';
+            }
+
+            document.getElementById('sync-btn').addEventListener('click', function() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+                const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", "romao_dados_backup.json");
+                document.body.appendChild(dl); dl.click(); dl.remove();
+                showToast("Cópia de segurança baixada com sucesso!", "success");
+            });
+
+            verificarSessao();
+        });
+    </script>
+</body>
+</html>
