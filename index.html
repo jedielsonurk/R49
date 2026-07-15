@@ -181,6 +181,17 @@
         .card-kpi .value.green { color: #69f0ae; }
 
         .row-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 2rem; }
+
+        .cobrancas-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+        .cobrancas-header-icon { font-size: 1.6rem; }
+        .cobrancas-header-title { font-size: 1.6rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-main); }
+        .cobrancas-data-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; padding: 1.25rem; text-align: center; font-size: 1.15rem; font-weight: 600; color: var(--text-main); margin-bottom: 1.5rem; }
+        .cobrancas-section-title { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+        .cobrancas-section-title.verde { color: #69f0ae; }
+        .cobrancas-section-title.vermelho { color: #ff5252; }
+        .dot-status { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        .dot-status.verde { background-color: #69f0ae; }
+        .dot-status.vermelho { background-color: #ff5252; }
         .panel-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 6px; margin-bottom: 1.5rem; }
         .panel-box h3 { margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
 
@@ -290,20 +301,24 @@
             </div>
 
             <div id="tab-cobrancas" class="tab-content">
-                <h2 style="margin-bottom:0.5rem;">Cobranças do Dia</h2>
+                <div class="cobrancas-header">
+                    <span class="cobrancas-header-icon">📅</span>
+                    <h2 class="cobrancas-header-title">Cobranças do Dia</h2>
+                </div>
+                <div class="cobrancas-data-box" id="cobrancas-data-extenso">--</div>
+
                 <div class="grid-cards" style="margin-bottom:1.5rem;">
                     <div class="card-kpi"><div class="label">A Receber Hoje</div><div class="value" id="kpi-receber-hoje">R$ 0,00</div></div>
                     <div class="card-kpi"><div class="label">Total Atrasado</div><div class="value red" id="kpi-total-atrasado">R$ 0,00</div></div>
                 </div>
-                <div class="row-split">
-                    <div class="panel-box">
-                        <h3>📋 Recebíveis de Hoje</h3>
-                        <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parc.</th><th>Valor Saldo</th><th>Vencimento</th></tr></thead><tbody id="tbl-hoje-corpo"></tbody></table></div>
-                    </div>
-                    <div class="panel-box">
-                        <h3>⚠️ Inadimplentes / Atrasados</h3>
-                        <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parc.</th><th>Valor Saldo</th><th>Dias Atraso</th></tr></thead><tbody id="tbl-atrasados-corpo"></tbody></table></div>
-                    </div>
+
+                <div class="panel-box">
+                    <h3 class="cobrancas-section-title verde"><span class="dot-status verde"></span>A Receber Hoje</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Valor</th></tr></thead><tbody id="tbl-hoje-corpo"></tbody></table></div>
+                </div>
+                <div class="panel-box">
+                    <h3 class="cobrancas-section-title vermelho"><span class="dot-status vermelho"></span>Atrasados</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Vencimento</th><th>Valor</th><th>Dias Atraso</th></tr></thead><tbody id="tbl-atrasados-corpo"></tbody></table></div>
                 </div>
             </div>
 
@@ -400,6 +415,9 @@
 
             <div id="tab-clientes" class="tab-content">
                 <h2 style="margin-bottom:1rem;">Gestão de Clientes e Dívidas</h2>
+                <div class="form-group" style="max-width: 400px;">
+                    <input type="text" id="busca-cliente" placeholder="🔎 Buscar cliente pelo nome...">
+                </div>
                 <div id="clientes-lista-container"></div>
             </div>
 
@@ -455,27 +473,41 @@
             let salvamentoPendente = false;
 
             async function carregarDados() {
-                const { data: row, error } = await supabase
+                console.log("[Romão Cred] Buscando dados no Supabase (tabela app_state, id='main')...");
+                showToast("Carregando dados da nuvem...", "info");
+
+                const { data: row, error, status } = await supabase
                     .from('app_state')
                     .select('data')
                     .eq('id', SUPABASE_ROW_ID)
                     .maybeSingle();
 
+                console.log("[Romão Cred] Resposta do Supabase:", { row, error, status });
+
                 if (error) {
-                    showToast("Erro ao carregar dados da nuvem: " + error.message, "error");
+                    // Erro real de conexão, tabela inexistente, ou RLS bloqueando.
+                    console.error("[Romão Cred] ERRO ao carregar:", error);
+                    showToast("ERRO ao carregar da nuvem: " + error.message + " (veja o console - F12)", "error");
                 } else if (row && row.data) {
                     state = row.data;
                     if(!state.clientes) state.clientes = [];
                     if(!state.transacoes) state.transacoes = [];
                     if(!state.depositos) state.depositos = [];
                     if(typeof state.caixa !== 'number') state.caixa = 0;
+                    console.log("[Romão Cred] Dados carregados com sucesso:", state);
                 } else {
-                    // Nenhum registro ainda existe no Supabase: cria o registro inicial
-                    await supabase.from('app_state').upsert({
+                    // Nenhum registro ainda existe no Supabase (primeira vez rodando o sistema):
+                    // cria o registro inicial vazio para não quebrar o upsert seguinte.
+                    console.warn("[Romão Cred] Nenhum registro encontrado. Criando registro inicial vazio.");
+                    const { error: errInicial } = await supabase.from('app_state').upsert({
                         id: SUPABASE_ROW_ID,
                         data: state,
                         updated_at: new Date().toISOString()
                     });
+                    if (errInicial) {
+                        console.error("[Romão Cred] ERRO ao criar registro inicial:", errInicial);
+                        showToast("ERRO ao criar registro inicial: " + errInicial.message, "error");
+                    }
                 }
                 renderizarTudo();
             }
@@ -493,6 +525,8 @@
                 }
                 salvamentoEmAndamento = true;
 
+                console.log("[Romão Cred] Salvando no Supabase...", state);
+
                 const { error } = await supabase
                     .from('app_state')
                     .upsert({ id: SUPABASE_ROW_ID, data: state, updated_at: new Date().toISOString() });
@@ -500,7 +534,10 @@
                 salvamentoEmAndamento = false;
 
                 if (error) {
-                    showToast("Erro ao salvar na nuvem: " + error.message, "error");
+                    console.error("[Romão Cred] ERRO ao salvar:", error);
+                    showToast("ERRO ao salvar na nuvem: " + error.message + " (veja o console - F12)", "error");
+                } else {
+                    console.log("[Romão Cred] Salvo com sucesso.");
                 }
 
                 if (salvamentoPendente) {
@@ -523,6 +560,7 @@
             function parseInputDate(str) { if(!str) return new Date(); const p = str.split('-'); return new Date(p[0], p[1] - 1, p[2], 12, 0, 0); }
             function formatDateBR(ds) { if(!ds) return ''; return parseInputDate(ds).toLocaleDateString('pt-BR'); }
             function getDiaSemanaExtenso(ds) { const d = parseInputDate(ds); return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d.getDay()]; }
+            function getDiaSemanaCompleto(d) { return ['Domingo', 'Segunda-Feira', 'Terça-Feira', 'Quarta-Feira', 'Quinta-Feira', 'Sexta-Feira', 'Sábado'][d.getDay()]; }
             
             function calcularDiasAtraso(dv) {
                 const hoje = new Date(); hoje.setHours(0,0,0,0);
@@ -720,6 +758,7 @@
             });
 
             document.getElementById('filtro-dep-nome').addEventListener('input', () => renderizarTudo());
+            document.getElementById('busca-cliente').addEventListener('input', () => renderizarTudo());
             document.getElementById('filtro-dep-data').addEventListener('change', () => renderizarTudo());
 
             window.aplicarAbate = function(cliId, empId) {
@@ -871,7 +910,25 @@
                 const dHj = new Date(), d7 = new Date(); d7.setDate(dHj.getDate()-7); 
                 const initM = new Date(dHj.getFullYear(), dHj.getMonth(), 1);
 
-                (state.clientes || []).forEach(cli => {
+                const dataExtensoEl = document.getElementById('cobrancas-data-extenso');
+                if (dataExtensoEl) {
+                    const diaSemanaCompleto = getDiaSemanaCompleto(dHj);
+                    const dataFormatada = dHj.toLocaleDateString('pt-BR');
+                    dataExtensoEl.innerText = `${diaSemanaCompleto}, ${dataFormatada}`;
+                }
+
+                // Ordena os clientes A-Z pelo nome (não altera a ordem original salva nos dados,
+                // só a ordem em que aparecem na tela).
+                const clientesOrdenados = [...(state.clientes || [])].sort((a, b) =>
+                    a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
+                );
+
+                // Filtro de busca por nome (aba Clientes/Dívidas). Não afeta os cálculos de KPI,
+                // só decide quais cards aparecem na lista.
+                const buscaInput = document.getElementById('busca-cliente');
+                const termoBusca = buscaInput ? buscaInput.value.trim().toLowerCase() : '';
+
+                clientesOrdenados.forEach(cli => {
                     let htmlEmps = '';
                     
                     // CORREÇÃO: por padrão, se o cliente ainda não tem estado registrado
@@ -900,10 +957,10 @@
                             if(sP > 0) {
                                 if(dAtr > 0) {
                                     parAtr++; totAtr += sP;
-                                    htmlAtr += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td>${formatReal(sP)}</td><td>${dAtr} dias</td></tr>`;
+                                    htmlAtr += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td>${formatDateBR(p.dataVencimento)}</td><td style="color:#ff5252">${formatReal(sP)}</td><td>${dAtr} dias</td></tr>`;
                                     htmlInad += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td>${formatDateBR(p.dataVencimento)}</td><td>${formatReal(p.valorBase)}</td><td>${formatReal(sP)}</td><td>${dAtr}</td></tr>`;
                                 } else {
-                                    if(p.dataVencimento === hj) { recHj += sP; htmlHj += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td>${formatReal(sP)}</td><td>Hoje</td></tr>`; }
+                                    if(p.dataVencimento === hj) { recHj += sP; htmlHj += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td style="color:#69f0ae">${formatReal(sP)}</td></tr>`; }
                                     if(dAtr === 0 && parseInputDate(p.dataVencimento) <= new Date(dHj.getTime() + 3*24*60*60*1000)) v3d++;
                                 }
                             }
@@ -970,14 +1027,19 @@
                             </div>`;
                     });
 
-                    htmlClis += `
-                        <div class="client-card ${isOpenClass}" id="cli-card-${cli.id}">
-                            <div class="client-header" onclick="toggleClienteCollapse('${cli.id}')">
-                                <div><strong style="font-size:1.1rem;">${cli.nome}</strong> <span style="font-size:0.8rem; color:var(--text-muted); margin-left:10px;">${cli.telefone||''}</span></div>
-                                <button class="btn danger small" onclick="excluirCliente(event, '${cli.id}')">🗑 Excluir Cliente</button>
-                            </div>
-                            <div class="client-body">${htmlEmps || '<p style="color:var(--text-muted)">Nenhum contrato ativo para este cliente.</p>'}</div>
-                        </div>`;
+                    // Só adiciona o card na lista visível se o nome bater com a busca
+                    // (ou se não houver busca digitada). Os KPIs acima já foram computados
+                    // com TODOS os clientes, independente do filtro.
+                    if (!termoBusca || cli.nome.toLowerCase().includes(termoBusca)) {
+                        htmlClis += `
+                            <div class="client-card ${isOpenClass}" id="cli-card-${cli.id}">
+                                <div class="client-header" onclick="toggleClienteCollapse('${cli.id}')">
+                                    <div><strong style="font-size:1.1rem;">${cli.nome}</strong> <span style="font-size:0.8rem; color:var(--text-muted); margin-left:10px;">${cli.telefone||''}</span></div>
+                                    <button class="btn danger small" onclick="excluirCliente(event, '${cli.id}')">🗑 Excluir Cliente</button>
+                                </div>
+                                <div class="client-body">${htmlEmps || '<p style="color:var(--text-muted)">Nenhum contrato ativo para este cliente.</p>'}</div>
+                            </div>`;
+                    }
                 });
 
                 document.getElementById('kpi-caixa').innerText = formatReal(state.caixa || 0);
@@ -991,9 +1053,13 @@
                 document.getElementById('kpi-receber-hoje').innerText = formatReal(recHj); 
                 document.getElementById('kpi-total-atrasado').innerText = formatReal(totAtr);
                 
-                document.getElementById('tbl-hoje-corpo').innerHTML = htmlHj || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nada a receber hoje.</td></tr>';
-                document.getElementById('tbl-atrasados-corpo').innerHTML = htmlAtr || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nenhum atraso pendente.</td></tr>';
-                document.getElementById('clientes-lista-container').innerHTML = htmlClis || '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nenhum cliente cadastrado.</p>';
+                document.getElementById('tbl-hoje-corpo').innerHTML = htmlHj || '<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Nada a receber hoje.</td></tr>';
+                document.getElementById('tbl-atrasados-corpo').innerHTML = htmlAtr || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Nenhum atraso pendente.</td></tr>';
+                document.getElementById('clientes-lista-container').innerHTML = htmlClis || (
+                    termoBusca
+                        ? '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nenhum cliente encontrado para essa busca.</p>'
+                        : '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nenhum cliente cadastrado.</p>'
+                );
 
                 let hEx = ''; 
                 (state.transacoes || []).slice(0, 6).forEach(t => { 
