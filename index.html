@@ -959,6 +959,7 @@
 
                 clientesOrdenados.forEach(cli => {
                     let htmlEmps = '';
+                    let saldoDevedorCliente = 0;
                     
                     // CORREÇÃO: por padrão, se o cliente ainda não tem estado registrado
                     // (ex: primeira renderização, ou cliente novo), o card começa FECHADO.
@@ -1035,6 +1036,8 @@
                                 <tr class="history-row" id="hist-row-${p.id}"><td colspan="7">${hHtml}</td></tr>`;
                         });
 
+                        saldoDevedorCliente += tS;
+
                         htmlEmps += `
                             <div class="loan-box">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
@@ -1067,11 +1070,21 @@
                     // (ou se não houver busca digitada). Os KPIs acima já foram computados
                     // com TODOS os clientes, independente do filtro.
                     if (!termoBusca || cli.nome.toLowerCase().includes(termoBusca)) {
+                        const qtdEmp = (cli.emprestimos || []).length;
                         htmlClis += `
                             <div class="client-card ${isOpenClass}" id="cli-card-${cli.id}">
                                 <div class="client-header" onclick="toggleClienteCollapse('${cli.id}')">
-                                    <div><strong style="font-size:1.1rem;">${cli.nome}</strong> <span style="font-size:0.8rem; color:var(--text-muted); margin-left:10px;">${cli.telefone||''}</span></div>
-                                    <button class="btn danger small" onclick="excluirCliente(event, '${cli.id}')">🗑 Excluir Cliente</button>
+                                    <div>
+                                        <strong style="font-size:1.1rem;">${cli.nome}</strong> <span style="font-size:0.8rem; color:var(--text-muted); margin-left:10px;">${cli.telefone||''}</span>
+                                        <div style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">${qtdEmp} empréstimo(s)</div>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:1.5rem;">
+                                        <div style="text-align:right;">
+                                            <div style="font-size:0.8rem; color:var(--text-muted);">Saldo devedor</div>
+                                            <strong style="font-size:1.1rem; color:${saldoDevedorCliente>0?'#ff5252':'#69f0ae'}">${formatReal(saldoDevedorCliente)}</strong>
+                                        </div>
+                                        <button class="btn danger small" onclick="excluirCliente(event, '${cli.id}')">🗑 Excluir Cliente</button>
+                                    </div>
                                 </div>
                                 <div class="client-body">${htmlEmps || '<p style="color:var(--text-muted)">Nenhum contrato ativo para este cliente.</p>'}</div>
                             </div>`;
