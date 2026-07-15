@@ -56,12 +56,23 @@
             box-shadow: 0 4px 25px rgba(0,0,0,0.7);
         }
 
+        .logo-metalico {
+            background: linear-gradient(180deg, #f5f5f5 0%, #cfcfcf 35%, #9a9a9a 55%, #e8e8e8 75%, #b5b5b5 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.15), 0 2px 6px rgba(0,0,0,0.6);
+            font-weight: 700;
+            letter-spacing: 3px;
+        }
+        .logo-metalico .colchete { -webkit-text-fill-color: initial; background: none; color: #d0d0d0; text-shadow: 0 1px 0 rgba(255,255,255,0.2), 0 2px 6px rgba(0,0,0,0.6); }
+
         .login-card h2 {
             margin-bottom: 0.25rem;
             text-align: center;
-            color: var(--text-main);
-            letter-spacing: 2px;
-            font-size: 1.8rem;
+            letter-spacing: 3px;
+            font-size: 2rem;
+            text-transform: uppercase;
         }
 
         .login-card .subtitle {
@@ -90,8 +101,8 @@
             gap: 1rem;
         }
 
-        .brand h1 { font-size: 1.5rem; color: var(--text-main); }
-        .brand span { color: var(--text-muted); font-size: 0.9rem; }
+        .brand h1 { font-size: 1.6rem; letter-spacing: 2px; text-transform: uppercase; margin: 0; }
+        .brand span { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; }
         .header-actions { display: flex; gap: 1rem; align-items: center; }
 
         nav.tabs-nav {
@@ -247,7 +258,7 @@
 
     <div id="login-screen">
         <div class="login-card">
-            <h2>ROMÃO CRED</h2>
+            <h2 class="logo-metalico"><span class="colchete">[%]</span> ROMÃO</h2>
             <div class="subtitle">Empresa Simples de Crédito</div>
             <form id="login-form">
                 <div class="form-group">
@@ -266,7 +277,7 @@
     <div id="app-screen">
         <header>
             <div class="brand">
-                <h1>Romão Cred</h1>
+                <h1 class="logo-metalico"><span class="colchete">[%]</span> ROMÃO</h1>
                 <span>Empresa Simples de Crédito</span>
             </div>
             <div class="header-actions">
