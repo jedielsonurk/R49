@@ -64,8 +64,26 @@
             text-shadow: 0 1px 0 rgba(255,255,255,0.15), 0 2px 6px rgba(0,0,0,0.6);
             font-weight: 700;
             letter-spacing: 3px;
+            font-family: Georgia, 'Times New Roman', serif;
         }
-        .logo-metalico .colchete { -webkit-text-fill-color: initial; background: none; color: #d0d0d0; text-shadow: 0 1px 0 rgba(255,255,255,0.2), 0 2px 6px rgba(0,0,0,0.6); }
+        .logo-metalico .colchete {
+            -webkit-text-fill-color: initial;
+            background: none;
+            color: #d0d0d0;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.2), 0 2px 6px rgba(0,0,0,0.6);
+            font-size: 1.35em;
+            font-weight: 900;
+            margin-right: 0.15em;
+            display: inline-block;
+        }
+        /* Símbolo maior só dentro do cabeçalho do sistema (não afeta a tela de login) */
+        header .colchete {
+            font-size: 1.7em;
+        }
+        /* Símbolo menor só na tela de login */
+        .login-card .colchete {
+            font-size: 1.1em;
+        }
 
         .login-card h2 {
             margin-bottom: 0.25rem;
@@ -950,13 +968,15 @@
                     let isOpenClass = openCardsState[cli.id] ? 'open' : '';
 
                     (cli.emprestimos || []).forEach(emp => {
-                        let tP = 0, tS = 0;
+                        let tP = 0, tS = 0, tTotalAtual = 0, tJurosAcumulados = 0;
                         let htmlParcs = '';
                         
                         (emp.parcelas || []).forEach(p => {
                             let sP = p.valor - p.pago; 
                             tP += p.pago; 
                             tS += sP;
+                            tTotalAtual += p.valor;
+                            tJurosAcumulados += (p.jurosExtras || 0);
                             
                             if(p.pago < p.basePuro) {
                                 capRua += (p.basePuro - p.pago);
@@ -1022,7 +1042,12 @@
                                     <button class="btn danger small" onclick="excluirEmprestimo('${cli.id}', '${emp.id}')">🗑 Remover Contrato</button>
                                 </div>
                                 <div class="loan-summary">
-                                    <div><span>Total Previsto</span><strong>${formatReal(emp.valorTotal)}</strong></div><div><span>Total Pago</span><strong style="color:#69f0ae">${formatReal(tP)}</strong></div><div><span>Saldo Restante</span><strong style="color:${tS>0?'#ff5252':'#69f0ae'}">${formatReal(tS)}</strong></div>
+                                    <div><span>Total (c/ Juros)</span><strong>${formatReal(tTotalAtual)}</strong></div>
+                                    <div><span>Pago</span><strong style="color:#69f0ae">${formatReal(tP)}</strong></div>
+                                    <div><span>Saldo Devedor</span><strong style="color:${tS>0?'#ff5252':'#69f0ae'}">${formatReal(tS)}</strong></div>
+                                    <div><span>Juros Acumulados</span><strong>${formatReal(tJurosAcumulados)}</strong></div>
+                                    <div><span>Lucro Esperado</span><strong style="color:#f9a825">${formatReal(tTotalAtual - emp.principal)}</strong></div>
+                                    <div><span>Valor Emprestado</span><strong>${formatReal(emp.principal)}</strong></div>
                                 </div>
                                 <div class="loan-actions">
                                     <input type="number" step="0.01" id="abate-${emp.id}" style="width:110px; padding:0.4rem;" placeholder="0.00">
