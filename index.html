@@ -491,6 +491,8 @@
             let state = { caixa: 0, clientes: [], transacoes: [], depositos: [] };
             // Objeto auxiliar para lembrar quais cards de clientes estavam abertos antes de recarregar a tela
             let openCardsState = {};
+            // Controla quais meses do Balancete de Juros estão expandidos (mostrando a lista de parcelas)
+            let openBalanceteState = {};
 
             // ===== SUPABASE (R49): substitui o localStorage como fonte de dados =====
             const SUPABASE_URL = 'https://aprhvjslvevqfflcjgwh.supabase.co';
@@ -965,6 +967,17 @@
                     openCardsState[id] = true;
                 }
             };
+
+            // Expande/recolhe a lista detalhada de pagamentos de um mês no Balancete de Juros
+            window.toggleBalanceteMes = function(mesAno) {
+                const box = document.getElementById(`balancete-detalhe-${mesAno}`);
+                const seta = document.getElementById(`balancete-seta-${mesAno}`);
+                if (!box) return;
+                const abrindo = box.style.display === 'none' || box.style.display === '';
+                box.style.display = abrindo ? 'block' : 'none';
+                openBalanceteState[mesAno] = abrindo;
+                if (seta) seta.innerText = abrindo ? '▲' : '▼';
+            };
             
             window.excluirEmprestimo = function(cId, eId) {
                 if(!confirm("Remover contrato permanentemente?")) return;
@@ -980,6 +993,19 @@
                 let idx = state.clientes.findIndex(c => c.id === cId);
                 state.clientes.splice(idx,1); 
                 salvarDados();
+            };
+
+            window.editarNomeCliente = function(e, cId) {
+                if (e) e.stopPropagation();
+                let cli = state.clientes.find(c => c.id === cId);
+                if (!cli) return;
+                const novoNome = prompt("Editar nome do cliente:", cli.nome);
+                if (novoNome === null) return; // cancelou
+                const nomeLimpo = novoNome.trim();
+                if (!nomeLimpo) return showToast("O nome não pode ficar em branco.", "error");
+                cli.nome = nomeLimpo;
+                salvarDados();
+                showToast("Nome do cliente atualizado!", "success");
             };
 
             function renderizarTudo() {
@@ -1135,7 +1161,7 @@
                             <div class="client-card ${isOpenClass}" id="cli-card-${cli.id}">
                                 <div class="client-header" onclick="toggleClienteCollapse('${cli.id}')">
                                     <div>
-                                        <strong style="font-size:1.1rem;">${cli.nome}</strong> <span style="font-size:0.8rem; color:var(--text-muted); margin-left:10px;">${cli.telefone||''}</span>
+                                        <strong style="font-size:1.1rem;">${cli.nome}</strong> <button class="btn secondary small" style="padding:1px 6px; font-size:0.75rem;" onclick="editarNomeCliente(event, '${cli.id}')" title="Editar nome">✏️</button> <span style="font-size:0.8rem; color:var(--text-muted); margin-left:10px;">${cli.telefone||''}</span>
                                         <div style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">${qtdEmp} empréstimo(s)</div>
                                     </div>
                                     <div style="display:flex; align-items:center; gap:1.5rem;">
@@ -1207,7 +1233,20 @@
                 let hBal = ''; 
                 Object.keys(bAgr).sort((a,b)=>b.localeCompare(a)).forEach(m => {
                     let sub = bAgr[m].itens.map(i => `<tr><td>${i.cliente}</td><td>Parcela ${i.parcela}</td><td>Venc. ${formatDateBR(i.vencimento)}</td><td>Pago em ${formatDateBR(i.dataPagamento)}</td><td style="color:#69f0ae">+ ${formatReal(i.juro)}</td></tr>`).join('');
-                    hBal += `<div class="panel-box"><div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;"><h3>Mês: ${m.split('-')[1]}/${m.split('-')[0]}</h3><strong style="color:#69f0ae">Lucro Total: ${formatReal(bAgr[m].total)}</strong></div><div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Vencimento</th><th>Pagamento</th><th>Lucro</th></tr></thead><tbody>${sub}</tbody></table></div></div>`;
+                    const aberto = openBalanceteState[m] === true;
+                    const seta = aberto ? '▲' : '▼';
+                    hBal += `<div class="panel-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleBalanceteMes('${m}')">
+                            <h3 style="border:none; margin:0; padding:0;">Mês: ${m.split('-')[1]}/${m.split('-')[0]}</h3>
+                            <div style="display:flex; align-items:center; gap:1rem;">
+                                <strong style="color:#69f0ae">Lucro Total: ${formatReal(bAgr[m].total)}</strong>
+                                <span id="balancete-seta-${m}" style="font-size:1rem; color:var(--text-muted);">${seta}</span>
+                            </div>
+                        </div>
+                        <div id="balancete-detalhe-${m}" style="display:${aberto ? 'block' : 'none'}; margin-top:1rem;">
+                            <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Vencimento</th><th>Pagamento</th><th>Lucro</th></tr></thead><tbody>${sub}</tbody></table></div>
+                        </div>
+                    </div>`;
                 });
                 document.getElementById('balancete-container').innerHTML = hBal || '<p style="color:var(--text-muted)">Nenhum lucro de juros recebido no período.</p>';
             }
