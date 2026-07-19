@@ -828,13 +828,47 @@
                 let pct = parseFloat(taxInput.value);
                 if(isNaN(pct) || pct < 0) return showToast("Digite uma taxa de juros válida.", "error");
 
+                const dataIniInput = document.getElementById(`juros-data-ini-${empId}`);
+                const dataFimInput = document.getElementById(`juros-data-fim-${empId}`);
+                const dataIniStr = dataIniInput ? dataIniInput.value : '';
+                const dataFimStr = dataFimInput ? dataFimInput.value : '';
+
+                // Se o usuário preencheu as duas datas, usamos um período fixo e manual
+                // (Data Inicial até Data Final) em vez do cálculo automático até hoje.
+                // Isso serve para registrar histórico antigo onde já houve pagamentos
+                // entre os vencimentos e a data de hoje.
+                let periodoCustomizado = false;
+                let diasCustomizado = 0;
+                let dataLimiteVencimento = null;
+
+                if (dataIniStr && dataFimStr) {
+                    const dIni = parseInputDate(dataIniStr);
+                    const dFim = parseInputDate(dataFimStr);
+                    diasCustomizado = Math.floor((dFim - dIni) / (1000 * 60 * 60 * 24));
+                    if (diasCustomizado <= 0) {
+                        return showToast("A Data Final precisa ser depois da Data Inicial.", "error");
+                    }
+                    periodoCustomizado = true;
+                    dataLimiteVencimento = dFim;
+                } else if (dataIniStr || dataFimStr) {
+                    return showToast("Preencha as duas datas (De / Até) ou deixe as duas em branco para usar o padrão.", "error");
+                }
+
                 let taxa = pct / 100;
                 let cli = state.clientes.find(c => c.id === cliId);
                 let emp = cli.emprestimos.find(e => e.id === empId);
                 let added = 0;
 
                 emp.parcelas.forEach(p => {
-                    let dias = calcularDiasAtraso(p.dataVencimento);
+                    let dias;
+                    if (periodoCustomizado) {
+                        // Só aplica juros em parcelas que já estavam vencidas dentro do período escolhido
+                        if (parseInputDate(p.dataVencimento) > dataLimiteVencimento) return;
+                        dias = diasCustomizado;
+                    } else {
+                        dias = calcularDiasAtraso(p.dataVencimento);
+                    }
+
                     if (dias > 0 && p.pago < p.valor) {
                         let nV = parseFloat((p.valorBase * Math.pow((1 + taxa), dias)).toFixed(2));
                         let diff = nV - p.valor;
@@ -849,9 +883,10 @@
 
                 if (added > 0) { 
                     salvarDados(); 
-                    showToast(`Juros de ${pct}% aplicados com sucesso! (+${formatReal(added)})`, "success"); 
+                    const msgPeriodo = periodoCustomizado ? ` (período ${formatDateBR(dataIniStr)} a ${formatDateBR(dataFimStr)})` : '';
+                    showToast(`Juros de ${pct}% aplicados com sucesso${msgPeriodo}! (+${formatReal(added)})`, "success"); 
                 } else { 
-                    showToast("Nenhuma parcela atrasada elegível para aplicação de juros.", "info"); 
+                    showToast("Nenhuma parcela elegível para aplicação de juros nesse período.", "info"); 
                 }
             };
 
@@ -884,6 +919,22 @@
                     showToast("Pagamento estornado com sucesso!", "warning");
                 }
                 salvarDados();
+            };
+
+            window.zerarJurosParcela = function(cliId, empId, parcId) {
+                let cli = state.clientes.find(c => c.id === cliId);
+                let emp = cli.emprestimos.find(e => e.id === empId);
+                let p = emp.parcelas.find(x => x.id === parcId);
+
+                if (!p.jurosExtras || p.jurosExtras <= 0) {
+                    return showToast("Essa parcela não tem juros de atraso aplicados.", "info");
+                }
+
+                p.valor = p.valorBase;
+                p.jurosExtras = 0;
+                atualizarStatusParcela(p);
+                salvarDados();
+                showToast("Juros zerados! Parcela voltou ao valor original.", "success");
             };
 
             window.abrirEditarParcela = function(cliId, empId, parcId, val) {
@@ -1031,7 +1082,7 @@
                                 <tr>
                                     <td>${p.numero}</td><td>${formatDateBR(p.dataVencimento)} <small>(${getDiaSemanaExtenso(p.dataVencimento)})</small></td><td>${formatReal(p.valor)}</td><td>${formatReal(p.pago)}</td><td style="color:${sP>0?'#ff5252':'#69f0ae'}">${formatReal(sP)}</td>
                                     <td><span class="status-dot ${p.status} ${dAtr>0&&p.pago<p.valor?'atrasado':''}" onclick="ciclarStatus(event, '${cli.id}', '${emp.id}', '${p.id}')"></span></td>
-                                    <td><button class="btn secondary small" style="padding:2px 6px;" onclick="abrirEditarParcela('${cli.id}','${emp.id}','${p.id}', ${p.valor})">✏️</button> <button class="btn secondary small" style="padding:2px 6px;" onclick="toggleHistorico('${p.id}')">📜</button></td>
+                                    <td><button class="btn secondary small" style="padding:2px 6px;" onclick="abrirEditarParcela('${cli.id}','${emp.id}','${p.id}', ${p.valor})">✏️</button> <button class="btn secondary small" style="padding:2px 6px;" onclick="toggleHistorico('${p.id}')">📜</button>${(p.jurosExtras && p.jurosExtras > 0) ? ` <button class="btn danger small" style="padding:2px 6px;" onclick="zerarJurosParcela('${cli.id}','${emp.id}','${p.id}')" title="Zerar juros de atraso (volta para ${formatReal(p.valorBase)})">♻️ Zerar Juros</button>` : ''}</td>
                                 </tr>
                                 <tr class="history-row" id="hist-row-${p.id}"><td colspan="7">${hHtml}</td></tr>`;
                         });
@@ -1056,12 +1107,21 @@
                                     <input type="number" step="0.01" id="abate-${emp.id}" style="width:110px; padding:0.4rem;" placeholder="0.00">
                                     <button class="btn good small" onclick="aplicarAbate('${cli.id}', '${emp.id}')">💰 Receber / Abater</button>
                                     
-                                    <div style="display:inline-flex; align-items:center; gap:0.3rem; margin-left:auto; border-left:1px solid var(--border-color); padding-left:1rem;">
+                                    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem; margin-left:auto; border-left:1px solid var(--border-color); padding-left:1rem;">
+                                        <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                                            <label style="margin:0; font-size:0.7rem;">De</label>
+                                            <input type="date" id="juros-data-ini-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                        </div>
+                                        <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                                            <label style="margin:0; font-size:0.7rem;">Até</label>
+                                            <input type="date" id="juros-data-fim-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                        </div>
                                         <input type="number" step="0.1" id="juros-taxa-${emp.id}" value="3" style="width:70px; padding:0.4rem; text-align:center;" placeholder="%">
                                         <label style="margin:0; font-size:0.85rem;">%</label>
                                         <button class="btn danger small" onclick="aplicarJurosEmp('${cli.id}', '${emp.id}')">⚡ Aplicar Juros</button>
                                     </div>
                                 </div>
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem;">Deixe "De" e "Até" em branco para usar o comportamento padrão (vencimento até hoje). Preencha ambos para calcular juros só nesse intervalo.</div>
                                 <div class="table-responsive"><table><thead><tr><th>#</th><th>Vencimento</th><th>Valor Atual</th><th>Pago</th><th>Saldo</th><th>St</th><th>Ações</th></tr></thead><tbody>${htmlParcs}</tbody></table></div>
                             </div>`;
                     });
