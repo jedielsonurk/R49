@@ -835,23 +835,23 @@
                 const dataIniStr = dataIniInput ? dataIniInput.value : '';
                 const dataFimStr = dataFimInput ? dataFimInput.value : '';
 
-                // Se o usuário preencheu as duas datas, usamos um período fixo e manual
-                // (Data Inicial até Data Final) em vez do cálculo automático até hoje.
-                // Isso serve para registrar histórico antigo onde já houve pagamentos
-                // entre os vencimentos e a data de hoje.
+                // Se o usuário preencheu as duas datas, usamos um período manual em vez do
+                // cálculo automático até hoje. IMPORTANTE: cada parcela usa a PRÓPRIA data de
+                // vencimento até a Data Final para contar os dias de atraso — não um número de
+                // dias único aplicado igualmente a todas as parcelas do período. A Data Inicial
+                // só filtra quais parcelas entram (vencimento >= Data Inicial); ela não é usada
+                // no cálculo dos dias.
                 let periodoCustomizado = false;
-                let diasCustomizado = 0;
-                let dataLimiteVencimento = null;
+                let dataInicial = null;
+                let dataFinal = null;
 
                 if (dataIniStr && dataFimStr) {
-                    const dIni = parseInputDate(dataIniStr);
-                    const dFim = parseInputDate(dataFimStr);
-                    diasCustomizado = Math.floor((dFim - dIni) / (1000 * 60 * 60 * 24));
-                    if (diasCustomizado <= 0) {
+                    dataInicial = parseInputDate(dataIniStr);
+                    dataFinal = parseInputDate(dataFimStr);
+                    if (dataFinal <= dataInicial) {
                         return showToast("A Data Final precisa ser depois da Data Inicial.", "error");
                     }
                     periodoCustomizado = true;
-                    dataLimiteVencimento = dFim;
                 } else if (dataIniStr || dataFimStr) {
                     return showToast("Preencha as duas datas (De / Até) ou deixe as duas em branco para usar o padrão.", "error");
                 }
@@ -864,9 +864,11 @@
                 emp.parcelas.forEach(p => {
                     let dias;
                     if (periodoCustomizado) {
-                        // Só aplica juros em parcelas que já estavam vencidas dentro do período escolhido
-                        if (parseInputDate(p.dataVencimento) > dataLimiteVencimento) return;
-                        dias = diasCustomizado;
+                        const dataVenc = parseInputDate(p.dataVencimento);
+                        // Só entram parcelas vencidas dentro da janela escolhida (Data Inicial a Data Final)
+                        if (dataVenc < dataInicial || dataVenc > dataFinal) return;
+                        // Dias de atraso PRÓPRIOS dessa parcela: da vencimento dela até a Data Final
+                        dias = Math.floor((dataFinal - dataVenc) / (1000 * 60 * 60 * 24));
                     } else {
                         dias = calcularDiasAtraso(p.dataVencimento);
                     }
