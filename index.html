@@ -838,9 +838,10 @@
                 // Se o usuário preencheu as duas datas, usamos um período manual em vez do
                 // cálculo automático até hoje. IMPORTANTE: cada parcela usa a PRÓPRIA data de
                 // vencimento até a Data Final para contar os dias de atraso — não um número de
-                // dias único aplicado igualmente a todas as parcelas do período. A Data Inicial
-                // só filtra quais parcelas entram (vencimento >= Data Inicial); ela não é usada
-                // no cálculo dos dias.
+                // dias único aplicado igualmente a todas as parcelas. A Data Inicial NÃO filtra
+                // parcelas por vencimento (uma parcela vencida há semanas continua elegível se
+                // ainda tem saldo) — ela só marca a partir de quando você está registrando esse
+                // lançamento de juros, para referência no aviso de sucesso.
                 let periodoCustomizado = false;
                 let dataInicial = null;
                 let dataFinal = null;
@@ -865,8 +866,8 @@
                     let dias;
                     if (periodoCustomizado) {
                         const dataVenc = parseInputDate(p.dataVencimento);
-                        // Só entram parcelas vencidas dentro da janela escolhida (Data Inicial a Data Final)
-                        if (dataVenc < dataInicial || dataVenc > dataFinal) return;
+                        // Elegível se já venceu até a Data Final (não importa se venceu antes da Data Inicial)
+                        if (dataVenc > dataFinal) return;
                         // Dias de atraso PRÓPRIOS dessa parcela: da vencimento dela até a Data Final
                         dias = Math.floor((dataFinal - dataVenc) / (1000 * 60 * 60 * 24));
                     } else {
@@ -887,7 +888,7 @@
 
                 if (added > 0) { 
                     salvarDados(); 
-                    const msgPeriodo = periodoCustomizado ? ` (período ${formatDateBR(dataIniStr)} a ${formatDateBR(dataFimStr)})` : '';
+                    const msgPeriodo = periodoCustomizado ? ` (juros até ${formatDateBR(dataFimStr)})` : '';
                     showToast(`Juros de ${pct}% aplicados com sucesso${msgPeriodo}! (+${formatReal(added)})`, "success"); 
                 } else { 
                     showToast("Nenhuma parcela elegível para aplicação de juros nesse período.", "info"); 
@@ -1149,7 +1150,7 @@
                                         <button class="btn danger small" onclick="aplicarJurosEmp('${cli.id}', '${emp.id}')">⚡ Aplicar Juros</button>
                                     </div>
                                 </div>
-                                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem;">Deixe "De" e "Até" em branco para usar o comportamento padrão (vencimento até hoje). Preencha ambos para calcular juros só nesse intervalo.</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem;">Deixe "De" e "Até" em branco para usar o comportamento padrão (vencimento até hoje). Preenchendo os dois, o "Até" define até quando contar os juros — toda parcela já vencida até essa data (mesmo vencida há semanas) entra no cálculo, usando a própria data de vencimento dela. O "De" é só uma referência informativa desse lançamento.</div>
                                 <div class="table-responsive"><table><thead><tr><th>#</th><th>Vencimento</th><th>Valor Atual</th><th>Pago</th><th>Saldo</th><th>St</th><th>Ações</th></tr></thead><tbody>${htmlParcs}</tbody></table></div>
                             </div>`;
                     });
