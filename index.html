@@ -308,6 +308,7 @@
             <button class="tab-btn active" data-tab="tab-dashboard">Dashboard</button>
             <button class="tab-btn" data-tab="tab-cobrancas">Cobranças do Dia</button>
             <button class="tab-btn" data-tab="tab-caixa">Movimentação de Caixa</button>
+            <button class="tab-btn" data-tab="tab-gastos">Meus Gastos</button>
             <button class="tab-btn" data-tab="tab-depositos">Depósito Bancário</button>
             <button class="tab-btn" data-tab="tab-cadastro">Cadastrar Dívida</button>
             <button class="tab-btn" data-tab="tab-clientes" id="nav-btn-clientes">Clientes / Dívidas</button>
@@ -327,6 +328,7 @@
                     <div class="card-kpi"><div class="label">Parcelas Atrasadas</div><div class="value red" id="kpi-atrasadas">0</div></div>
                     <div class="card-kpi"><div class="label">Lucro Recebido (Semana)</div><div class="value green" id="kpi-lucro-semana">R$ 0,00</div></div>
                     <div class="card-kpi"><div class="label">Lucro Recebido (Mês)</div><div class="value green" id="kpi-lucro-mes">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Lucro Líquido (Mês, já descontando Meus Gastos)</div><div class="value" id="kpi-lucro-liquido-mes">R$ 0,00</div></div>
                 </div>
             </div>
 
@@ -366,6 +368,30 @@
                     <div class="panel-box">
                         <h3>Últimas Movimentações</h3>
                         <div class="table-responsive"><table><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead><tbody id="tbl-extrato-resumo"></tbody></table></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-gastos" class="tab-content">
+                <div class="grid-cards" style="margin-bottom:1.5rem;">
+                    <div class="card-kpi"><div class="label">Gastos no Mês Atual</div><div class="value red" id="kpi-gastos-mes">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Total Gasto (histórico)</div><div class="value red" id="kpi-gastos-total">R$ 0,00</div></div>
+                </div>
+                <div class="row-split">
+                    <div class="panel-box">
+                        <h3>Registrar Gasto</h3>
+                        <form id="form-gasto">
+                            <div class="form-group"><label>Valor (R$)</label><input type="number" step="0.01" id="gasto-valor" required placeholder="0.00"></div>
+                            <div class="form-group"><label>Data</label><input type="date" id="gasto-data" required></div>
+                            <div class="form-group"><label>Descrição</label><input type="text" id="gasto-desc" required placeholder="Ex: Boleto da faculdade"></div>
+                            <button type="submit" class="btn danger" style="width:100%;">💸 Registrar Gasto (retira do caixa)</button>
+                        </form>
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.75rem;">Esse valor sai do caixa/capital do empréstimo na hora, igual uma retirada, mas fica registrado aqui separado, com data e descrição, e é descontado do lucro do mês nos relatórios.</div>
+                    </div>
+                    <div class="panel-box">
+                        <h3>Meus Gastos Registrados</h3>
+                        <div class="form-group inline"><input type="text" id="filtro-gasto-desc" placeholder="Filtrar por descrição"><input type="date" id="filtro-gasto-data"></div>
+                        <div class="table-responsive"><table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th></th></tr></thead><tbody id="tbl-gastos-corpo"></tbody></table></div>
                     </div>
                 </div>
             </div>
@@ -508,7 +534,7 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            let state = { caixa: 0, clientes: [], transacoes: [], depositos: [], perdas: [] };
+            let state = { caixa: 0, clientes: [], transacoes: [], depositos: [], perdas: [], gastos: [] };
             // Objeto auxiliar para lembrar quais cards de clientes estavam abertos antes de recarregar a tela
             let openCardsState = {};
             // Controla quais meses do Balancete de Juros estão expandidos (mostrando a lista de parcelas)
@@ -545,6 +571,7 @@
                     if(!state.transacoes) state.transacoes = [];
                     if(!state.depositos) state.depositos = [];
                     if(!state.perdas) state.perdas = [];
+                    if(!state.gastos) state.gastos = [];
                     if(typeof state.caixa !== 'number') state.caixa = 0;
                     console.log("[Romão Cred] Dados carregados com sucesso:", state);
                 } else {
@@ -809,9 +836,39 @@
                 showToast("Depósito anotado!", "success");
             });
 
+            document.getElementById('form-gasto').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const valor = parseFloat(document.getElementById('gasto-valor').value);
+                const data = document.getElementById('gasto-data').value;
+                const desc = document.getElementById('gasto-desc').value.trim();
+                if (isNaN(valor) || valor <= 0) return showToast("Valor inválido", "error");
+                if (!desc) return showToast("Descreva o gasto", "error");
+
+                // Retira do caixa igual uma retirada normal (o dinheiro do empréstimo saiu de fato),
+                // mas fica registrado separadamente na lista de Meus Gastos, com data e descrição.
+                state.caixa -= valor;
+                registrarTransacao('retirada', valor, `Gasto: ${desc}`);
+                state.gastos.unshift({ id: 'gasto_' + Math.random().toString(36).substr(2, 9) + Date.now(), valor, data, desc });
+
+                salvarDados();
+                this.reset();
+                showToast(`Gasto de ${formatReal(valor)} registrado e retirado do caixa!`, "success");
+            });
+
+            window.excluirGasto = function(gastoId) {
+                if (!confirm("Excluir esse gasto? Isso NÃO devolve o valor ao caixa automaticamente — se quiser, injete o valor de volta manualmente.")) return;
+                const idx = state.gastos.findIndex(g => g.id === gastoId);
+                if (idx === -1) return;
+                state.gastos.splice(idx, 1);
+                salvarDados();
+                showToast("Gasto removido da lista.", "warning");
+            };
+
             document.getElementById('filtro-dep-nome').addEventListener('input', () => renderizarTudo());
             document.getElementById('busca-cliente').addEventListener('input', () => renderizarTudo());
             document.getElementById('filtro-dep-data').addEventListener('change', () => renderizarTudo());
+            document.getElementById('filtro-gasto-desc').addEventListener('input', () => renderizarTudo());
+            document.getElementById('filtro-gasto-data').addEventListener('change', () => renderizarTudo());
 
             window.aplicarAbate = function(cliId, empId) {
                 const inp = document.getElementById(`abate-${empId}`);
@@ -1354,6 +1411,38 @@
                 if (kpiQtdPerdasEl) kpiQtdPerdasEl.innerText = qtdPerdas;
                 const tblPerdasEl = document.getElementById('tbl-perdas-corpo');
                 if (tblPerdasEl) tblPerdasEl.innerHTML = hPerdas || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nenhuma perda registrada nesse período.</td></tr>';
+
+                // ===== Aba Meus Gastos =====
+                const gastoDescFiltro = (document.getElementById('filtro-gasto-desc')?.value || '').toLowerCase();
+                const gastoDataFiltro = document.getElementById('filtro-gasto-data')?.value || '';
+                const mesAtualStr = `${dHj.getFullYear()}-${String(dHj.getMonth()+1).padStart(2,'0')}`;
+
+                let gastosMesAtual = 0, gastosTotalHistorico = 0, hGastos = '';
+                const gastosOrdenados = [...(state.gastos || [])].sort((a,b) => parseInputDate(b.data) - parseInputDate(a.data));
+                gastosOrdenados.forEach(g => {
+                    gastosTotalHistorico += g.valor;
+                    if (g.data && g.data.substring(0,7) === mesAtualStr) gastosMesAtual += g.valor;
+
+                    if (gastoDescFiltro && !g.desc.toLowerCase().includes(gastoDescFiltro)) return;
+                    if (gastoDataFiltro && g.data !== gastoDataFiltro) return;
+                    hGastos += `<tr><td>${formatDateBR(g.data)}</td><td>${g.desc}</td><td style="color:#ff5252">${formatReal(g.valor)}</td><td><button class="btn danger small" style="padding:2px 6px;" onclick="excluirGasto('${g.id}')">🗑</button></td></tr>`;
+                });
+
+                const kpiGastosMesEl = document.getElementById('kpi-gastos-mes');
+                const kpiGastosTotalEl = document.getElementById('kpi-gastos-total');
+                if (kpiGastosMesEl) kpiGastosMesEl.innerText = formatReal(gastosMesAtual);
+                if (kpiGastosTotalEl) kpiGastosTotalEl.innerText = formatReal(gastosTotalHistorico);
+                const tblGastosEl = document.getElementById('tbl-gastos-corpo');
+                if (tblGastosEl) tblGastosEl.innerHTML = hGastos || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nenhum gasto registrado.</td></tr>';
+
+                // Desconta os gastos do mês do "Lucro Recebido (Mês)" mostrado no Dashboard,
+                // criando um KPI de Lucro Líquido do Mês (lucro de juros - gastos do mês)
+                const kpiLucroLiquidoMesEl = document.getElementById('kpi-lucro-liquido-mes');
+                if (kpiLucroLiquidoMesEl) {
+                    const lucroLiquido = lucMes - gastosMesAtual;
+                    kpiLucroLiquidoMesEl.innerText = formatReal(lucroLiquido);
+                    kpiLucroLiquidoMesEl.style.color = lucroLiquido >= 0 ? '#69f0ae' : '#ff5252';
+                }
             }
 
             document.getElementById('sync-btn').addEventListener('click', function() {
