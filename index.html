@@ -313,6 +313,7 @@
             <button class="tab-btn" data-tab="tab-clientes" id="nav-btn-clientes">Clientes / Dívidas</button>
             <button class="tab-btn" data-tab="tab-relatorios">Relatórios</button>
             <button class="tab-btn" data-tab="tab-balancete">Balancete de Juros</button>
+            <button class="tab-btn" data-tab="tab-perdas">Perdas</button>
         </nav>
 
         <main class="content">
@@ -469,6 +470,25 @@
                 <h2 style="margin-bottom:1rem;">Balancete de Juros Recebidos</h2>
                 <div id="balancete-container"></div>
             </div>
+
+            <div id="tab-perdas" class="tab-content">
+                <h2 style="margin-bottom:1rem;">Perdas</h2>
+                <div class="grid-cards" style="margin-bottom:1.5rem;">
+                    <div class="card-kpi"><div class="label">Total de Perdas (período filtrado)</div><div class="value red" id="kpi-total-perdas">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Quantidade de Baixas</div><div class="value" id="kpi-qtd-perdas">0</div></div>
+                </div>
+                <div class="panel-box">
+                    <h3>Filtrar por período</h3>
+                    <div class="form-group inline">
+                        <div><label>De</label><input type="date" id="filtro-perda-ini"></div>
+                        <div><label>Até</label><input type="date" id="filtro-perda-fim"></div>
+                    </div>
+                </div>
+                <div class="panel-box">
+                    <h3>📉 Histórico de Perdas</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Data</th><th>Cliente</th><th>Valor</th><th>Observação</th></tr></thead><tbody id="tbl-perdas-corpo"></tbody></table></div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -488,7 +508,7 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            let state = { caixa: 0, clientes: [], transacoes: [], depositos: [] };
+            let state = { caixa: 0, clientes: [], transacoes: [], depositos: [], perdas: [] };
             // Objeto auxiliar para lembrar quais cards de clientes estavam abertos antes de recarregar a tela
             let openCardsState = {};
             // Controla quais meses do Balancete de Juros estão expandidos (mostrando a lista de parcelas)
@@ -524,6 +544,7 @@
                     if(!state.clientes) state.clientes = [];
                     if(!state.transacoes) state.transacoes = [];
                     if(!state.depositos) state.depositos = [];
+                    if(!state.perdas) state.perdas = [];
                     if(typeof state.caixa !== 'number') state.caixa = 0;
                     console.log("[Romão Cred] Dados carregados com sucesso:", state);
                 } else {
@@ -982,6 +1003,48 @@
                 if (seta) seta.innerText = abrindo ? '▲' : '▼';
             };
             
+            window.registrarPerdaEmp = function(cliId, empId) {
+                let cli = state.clientes.find(c => c.id === cliId);
+                let emp = cli.emprestimos.find(e => e.id === empId);
+                let saldoAtual = emp.parcelas.reduce((acc, p) => acc + (p.valor - p.pago), 0);
+                saldoAtual = parseFloat(saldoAtual.toFixed(2));
+
+                if (saldoAtual <= 0) return showToast("Esse contrato não tem saldo em aberto para dar baixa como perda.", "info");
+
+                const dataInp = document.getElementById(`perda-data-${empId}`);
+                const obsInp = document.getElementById(`perda-obs-${empId}`);
+                const dataPerda = (dataInp && dataInp.value) ? dataInp.value : new Date().toISOString().split('T')[0];
+                const obs = (obsInp && obsInp.value.trim()) ? obsInp.value.trim() : '';
+
+                if (!confirm(`Confirma dar baixa de ${formatReal(saldoAtual)} como PERDA (dívida incobrável) para ${cli.nome}?\n\nEsse valor NÃO entra no caixa e some do saldo devedor/atrasados a partir de agora.`)) return;
+
+                // Fecha todas as parcelas em aberto marcando como perda (não conta como recebimento nem lucro)
+                emp.parcelas.forEach(p => {
+                    let sP = parseFloat((p.valor - p.pago).toFixed(2));
+                    if (sP > 0) {
+                        p.pago = p.valor;
+                        p.status = 'pago';
+                        p.perda = true;
+                        p.historico.push({ valor: sP, data: dataPerda, obs: obs ? `Baixa por perda: ${obs}` : 'Baixa por perda', tipo: 'perda' });
+                    }
+                });
+
+                state.perdas.push({
+                    id: 'perda_' + Math.random().toString(36).substr(2, 9) + Date.now(),
+                    clienteId: cli.id,
+                    clienteNome: cli.nome,
+                    emprestimoId: emp.id,
+                    valor: saldoAtual,
+                    data: dataPerda,
+                    obs: obs
+                });
+
+                if (dataInp) dataInp.value = '';
+                if (obsInp) obsInp.value = '';
+                salvarDados();
+                showToast(`Baixa de ${formatReal(saldoAtual)} registrada como perda.`, "success");
+            };
+
             window.excluirEmprestimo = function(cId, eId) {
                 if(!confirm("Remover contrato permanentemente?")) return;
                 let cli = state.clientes.find(c => c.id === cId);
@@ -1094,7 +1157,7 @@
                                 }
                                 acumuladoAntes = acumuladoDepois;
 
-                                if(lucroNessePagamento > 0) {
+                                if(lucroNessePagamento > 0 && h.tipo !== 'perda') {
                                     let dRef = parseInputDate(p.dataVencimento);
                                     if(dRef >= d7) lucSem += lucroNessePagamento; 
                                     if(dRef >= initM) lucMes += lucroNessePagamento;
@@ -1134,6 +1197,10 @@
                                 </div>
                                 <div class="loan-actions">
                                     <input type="number" step="0.01" id="abate-${emp.id}" style="width:110px; padding:0.4rem;" placeholder="0.00">
+                                    <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                                        <label style="margin:0; font-size:0.7rem;">Data do pagamento</label>
+                                        <input type="date" id="abate-data-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                    </div>
                                     <button class="btn good small" onclick="aplicarAbate('${cli.id}', '${emp.id}')">💰 Receber / Abater</button>
                                     
                                     <div style="display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem; margin-left:auto; border-left:1px solid var(--border-color); padding-left:1rem;">
@@ -1151,6 +1218,14 @@
                                     </div>
                                 </div>
                                 <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem;">Deixe "De" e "Até" em branco para usar o comportamento padrão (vencimento até hoje). Preenchendo os dois, o "Até" define até quando contar os juros — toda parcela já vencida até essa data (mesmo vencida há semanas) entra no cálculo, usando a própria data de vencimento dela. O "De" é só uma referência informativa desse lançamento.</div>
+                                <div class="loan-actions" style="background:rgba(255,82,82,0.06); border:1px solid rgba(255,82,82,0.25);">
+                                    <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                                        <label style="margin:0; font-size:0.7rem;">Data da perda</label>
+                                        <input type="date" id="perda-data-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                    </div>
+                                    <input type="text" id="perda-obs-${emp.id}" placeholder="Observação (opcional)" style="flex:1; min-width:150px; padding:0.4rem;">
+                                    <button class="btn danger small" onclick="registrarPerdaEmp('${cli.id}', '${emp.id}')">📉 Dar Baixa (Perda)</button>
+                                </div>
                                 <div class="table-responsive"><table><thead><tr><th>#</th><th>Vencimento</th><th>Valor Atual</th><th>Pago</th><th>Saldo</th><th>St</th><th>Ações</th></tr></thead><tbody>${htmlParcs}</tbody></table></div>
                             </div>`;
                     });
@@ -1228,6 +1303,7 @@
 
                 let hRP = ''; 
                 (state.clientes || []).forEach(c => (c.emprestimos || []).forEach(e => (e.parcelas || []).forEach(p => (p.historico || []).forEach(h => { 
+                    if (h.tipo === 'perda') return;
                     hRP += `<tr><td>${formatDateBR(h.data)}</td><td>${c.nome}</td><td>Parc. ${p.numero}</td><td>${formatReal(h.valor)}</td><td>${h.obs}</td></tr>`; 
                 }))));
                 document.getElementById('tbl-rel-pagamentos').innerHTML = hRP || '<tr><td colspan="5">Nenhum pagamento registrado ainda.</td></tr>';
@@ -1252,6 +1328,32 @@
                     </div>`;
                 });
                 document.getElementById('balancete-container').innerHTML = hBal || '<p style="color:var(--text-muted)">Nenhum lucro de juros recebido no período.</p>';
+
+                // ===== Aba Perdas =====
+                const perdaIniEl = document.getElementById('filtro-perda-ini');
+                const perdaFimEl = document.getElementById('filtro-perda-fim');
+                const perdaIniStr = perdaIniEl ? perdaIniEl.value : '';
+                const perdaFimStr = perdaFimEl ? perdaFimEl.value : '';
+                const perdaIniDate = perdaIniStr ? parseInputDate(perdaIniStr) : null;
+                const perdaFimDate = perdaFimStr ? parseInputDate(perdaFimStr) : null;
+
+                let totalPerdas = 0, qtdPerdas = 0, hPerdas = '';
+                const perdasOrdenadas = [...(state.perdas || [])].sort((a,b) => parseInputDate(b.data) - parseInputDate(a.data));
+                perdasOrdenadas.forEach(pd => {
+                    const dPerda = parseInputDate(pd.data);
+                    if (perdaIniDate && dPerda < perdaIniDate) return;
+                    if (perdaFimDate && dPerda > perdaFimDate) return;
+                    totalPerdas += pd.valor;
+                    qtdPerdas++;
+                    hPerdas += `<tr><td>${formatDateBR(pd.data)}</td><td>${pd.clienteNome}</td><td style="color:#ff5252">${formatReal(pd.valor)}</td><td>${pd.obs || ''}</td></tr>`;
+                });
+
+                const kpiTotalPerdasEl = document.getElementById('kpi-total-perdas');
+                const kpiQtdPerdasEl = document.getElementById('kpi-qtd-perdas');
+                if (kpiTotalPerdasEl) kpiTotalPerdasEl.innerText = formatReal(totalPerdas);
+                if (kpiQtdPerdasEl) kpiQtdPerdasEl.innerText = qtdPerdas;
+                const tblPerdasEl = document.getElementById('tbl-perdas-corpo');
+                if (tblPerdasEl) tblPerdasEl.innerHTML = hPerdas || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nenhuma perda registrada nesse período.</td></tr>';
             }
 
             document.getElementById('sync-btn').addEventListener('click', function() {
@@ -1260,6 +1362,20 @@
                 document.body.appendChild(dl); dl.click(); dl.remove();
                 showToast("Cópia de segurança baixada com sucesso!", "success");
             });
+
+            // Filtro de período da aba Perdas: padrão = Novembro mais recente até hoje
+            (function definirFiltroPadraoPerdas() {
+                const hoje = new Date();
+                let anoNovembro = hoje.getFullYear();
+                // Se ainda não passamos de novembro deste ano, usa novembro do ano anterior
+                if (hoje.getMonth() < 10) anoNovembro -= 1;
+                const iniInput = document.getElementById('filtro-perda-ini');
+                const fimInput = document.getElementById('filtro-perda-fim');
+                if (iniInput) iniInput.value = `${anoNovembro}-11-01`;
+                if (fimInput) fimInput.value = hoje.toISOString().split('T')[0];
+            })();
+            document.getElementById('filtro-perda-ini').addEventListener('change', () => renderizarTudo());
+            document.getElementById('filtro-perda-fim').addEventListener('change', () => renderizarTudo());
 
             verificarSessao();
         });
