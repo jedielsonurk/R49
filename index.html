@@ -221,6 +221,14 @@
         .dot-status { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
         .dot-status.verde { background-color: #69f0ae; }
         .dot-status.vermelho { background-color: #ff5252; }
+
+        .cobrancas-view-btn { background-color: var(--bg-panel-light); color: var(--text-muted); border: 1px solid var(--border-color); }
+        .cobrancas-view-btn.active { background-color: var(--primary); color: #000; font-weight: 600; }
+        .cobrancas-dia-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 1rem; overflow: hidden; }
+        .cobrancas-dia-header { background-color: var(--bg-panel-light); padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+        .cobrancas-dia-header strong { font-size: 1rem; text-transform: capitalize; }
+        .cobrancas-dia-body { padding: 0.5rem 1.25rem; }
+        .cobrancas-dia-body .table-responsive { margin: 0; }
         .panel-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 6px; margin-bottom: 1.5rem; }
         .panel-box h3 { margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
 
@@ -339,18 +347,36 @@
                 </div>
                 <div class="cobrancas-data-box" id="cobrancas-data-extenso">--</div>
 
-                <div class="grid-cards" style="margin-bottom:1.5rem;">
-                    <div class="card-kpi"><div class="label">A Receber Hoje</div><div class="value" id="kpi-receber-hoje">R$ 0,00</div></div>
-                    <div class="card-kpi"><div class="label">Total Atrasado</div><div class="value red" id="kpi-total-atrasado">R$ 0,00</div></div>
+                <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem;">
+                    <button class="btn small cobrancas-view-btn active" id="btn-view-dia" onclick="setCobrancasView('dia')">Dia</button>
+                    <button class="btn small cobrancas-view-btn" id="btn-view-semana" onclick="setCobrancasView('semana')">Semana</button>
+                    <button class="btn small cobrancas-view-btn" id="btn-view-mes" onclick="setCobrancasView('mes')">Mês</button>
                 </div>
 
-                <div class="panel-box">
-                    <h3 class="cobrancas-section-title verde"><span class="dot-status verde"></span>A Receber Hoje</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Valor</th></tr></thead><tbody id="tbl-hoje-corpo"></tbody></table></div>
+                <div id="cobrancas-view-dia">
+                    <div class="grid-cards" style="margin-bottom:1.5rem;">
+                        <div class="card-kpi"><div class="label">A Receber Hoje</div><div class="value" id="kpi-receber-hoje">R$ 0,00</div></div>
+                        <div class="card-kpi"><div class="label">Total Atrasado</div><div class="value red" id="kpi-total-atrasado">R$ 0,00</div></div>
+                    </div>
+
+                    <div class="panel-box">
+                        <h3 class="cobrancas-section-title verde"><span class="dot-status verde"></span>A Receber Hoje</h3>
+                        <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Valor</th></tr></thead><tbody id="tbl-hoje-corpo"></tbody></table></div>
+                    </div>
+                    <div class="panel-box">
+                        <h3 class="cobrancas-section-title vermelho"><span class="dot-status vermelho"></span>Atrasados</h3>
+                        <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Vencimento</th><th>Valor</th><th>Dias Atraso</th></tr></thead><tbody id="tbl-atrasados-corpo"></tbody></table></div>
+                    </div>
                 </div>
-                <div class="panel-box">
-                    <h3 class="cobrancas-section-title vermelho"><span class="dot-status vermelho"></span>Atrasados</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Vencimento</th><th>Valor</th><th>Dias Atraso</th></tr></thead><tbody id="tbl-atrasados-corpo"></tbody></table></div>
+
+                <div id="cobrancas-view-semana" style="display:none;">
+                    <div class="card-kpi" style="margin-bottom:1.5rem;"><div class="label">Total a Receber na Semana</div><div class="value" id="kpi-receber-semana">R$ 0,00</div></div>
+                    <div id="cobrancas-semana-container"></div>
+                </div>
+
+                <div id="cobrancas-view-mes" style="display:none;">
+                    <div class="card-kpi" style="margin-bottom:1.5rem;"><div class="label">Total a Receber no Mês</div><div class="value" id="kpi-receber-mes">R$ 0,00</div></div>
+                    <div id="cobrancas-mes-container"></div>
                 </div>
             </div>
 
@@ -1049,7 +1075,19 @@
                 }
             };
 
-            // Expande/recolhe a lista detalhada de pagamentos de um mês no Balancete de Juros
+            // Alterna entre as visualizações Dia / Semana / Mês na aba Cobranças
+            let cobrancasViewAtual = 'dia';
+            window.setCobrancasView = function(modo) {
+                cobrancasViewAtual = modo;
+                document.getElementById('cobrancas-view-dia').style.display = modo === 'dia' ? 'block' : 'none';
+                document.getElementById('cobrancas-view-semana').style.display = modo === 'semana' ? 'block' : 'none';
+                document.getElementById('cobrancas-view-mes').style.display = modo === 'mes' ? 'block' : 'none';
+                document.getElementById('btn-view-dia').classList.toggle('active', modo === 'dia');
+                document.getElementById('btn-view-semana').classList.toggle('active', modo === 'semana');
+                document.getElementById('btn-view-mes').classList.toggle('active', modo === 'mes');
+            };
+
+
             window.toggleBalanceteMes = function(mesAno) {
                 const box = document.getElementById(`balancete-detalhe-${mesAno}`);
                 const seta = document.getElementById(`balancete-seta-${mesAno}`);
@@ -1443,6 +1481,70 @@
                     kpiLucroLiquidoMesEl.innerText = formatReal(lucroLiquido);
                     kpiLucroLiquidoMesEl.style.color = lucroLiquido >= 0 ? '#69f0ae' : '#ff5252';
                 }
+
+                // ===== Aba Cobranças: visões Semana e Mês =====
+                (function renderizarCobrancasSemanaEMes() {
+                    const hojeD = new Date(); hojeD.setHours(12,0,0,0);
+                    // Início da semana = segunda-feira; fim = domingo
+                    const diaSemanaHoje = hojeD.getDay(); // 0=dom,1=seg,...6=sáb
+                    const offsetSegunda = diaSemanaHoje === 0 ? -6 : 1 - diaSemanaHoje;
+                    const inicioSemana = new Date(hojeD); inicioSemana.setDate(hojeD.getDate() + offsetSegunda);
+                    const fimSemana = new Date(inicioSemana); fimSemana.setDate(inicioSemana.getDate() + 6);
+
+                    const inicioMes = new Date(hojeD.getFullYear(), hojeD.getMonth(), 1, 12, 0, 0);
+                    const fimMes = new Date(hojeD.getFullYear(), hojeD.getMonth() + 1, 0, 12, 0, 0);
+
+                    let bucketsSemana = {}, bucketsMes = {};
+                    let totalSemana = 0, totalMes = 0;
+
+                    (state.clientes || []).forEach(c => (c.emprestimos || []).forEach(e => (e.parcelas || []).forEach(p => {
+                        const sP = parseFloat((p.valor - p.pago).toFixed(2));
+                        if (sP <= 0) return;
+                        const dVenc = parseInputDate(p.dataVencimento);
+
+                        if (dVenc >= inicioSemana && dVenc <= fimSemana) {
+                            if (!bucketsSemana[p.dataVencimento]) bucketsSemana[p.dataVencimento] = { total: 0, itens: [] };
+                            bucketsSemana[p.dataVencimento].total += sP;
+                            bucketsSemana[p.dataVencimento].itens.push({ cliente: c.nome, parcela: p.numero, valor: sP });
+                            totalSemana += sP;
+                        }
+                        if (dVenc >= inicioMes && dVenc <= fimMes) {
+                            if (!bucketsMes[p.dataVencimento]) bucketsMes[p.dataVencimento] = { total: 0, itens: [] };
+                            bucketsMes[p.dataVencimento].total += sP;
+                            bucketsMes[p.dataVencimento].itens.push({ cliente: c.nome, parcela: p.numero, valor: sP });
+                            totalMes += sP;
+                        }
+                    })));
+
+                    function montarHtmlDias(buckets) {
+                        let html = '';
+                        Object.keys(buckets).sort().forEach(dataStr => {
+                            const b = buckets[dataStr];
+                            const diaSemanaExt = getDiaSemanaCompleto(parseInputDate(dataStr));
+                            let linhas = b.itens.map(i => `<tr><td>${i.cliente}</td><td>${i.parcela}</td><td>${formatReal(i.valor)}</td></tr>`).join('');
+                            html += `<div class="cobrancas-dia-box">
+                                <div class="cobrancas-dia-header">
+                                    <strong>${diaSemanaExt}, ${formatDateBR(dataStr)}</strong>
+                                    <strong style="color:#69f0ae">${formatReal(b.total)}</strong>
+                                </div>
+                                <div class="cobrancas-dia-body">
+                                    <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody></table></div>
+                                </div>
+                            </div>`;
+                        });
+                        return html;
+                    }
+
+                    const semanaEl = document.getElementById('cobrancas-semana-container');
+                    if (semanaEl) semanaEl.innerHTML = montarHtmlDias(bucketsSemana) || '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nada a receber essa semana.</p>';
+                    const kpiSemanaEl = document.getElementById('kpi-receber-semana');
+                    if (kpiSemanaEl) kpiSemanaEl.innerText = formatReal(totalSemana);
+
+                    const mesEl = document.getElementById('cobrancas-mes-container');
+                    if (mesEl) mesEl.innerHTML = montarHtmlDias(bucketsMes) || '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nada a receber esse mês.</p>';
+                    const kpiMesEl = document.getElementById('kpi-receber-mes');
+                    if (kpiMesEl) kpiMesEl.innerText = formatReal(totalMes);
+                })();
             }
 
             document.getElementById('sync-btn').addEventListener('click', function() {
