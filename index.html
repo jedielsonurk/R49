@@ -500,6 +500,11 @@
                 <div class="form-group" style="max-width: 400px;">
                     <input type="text" id="busca-cliente" placeholder="🔎 Buscar cliente pelo nome...">
                 </div>
+                <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+                    <span style="font-size:0.85rem; color:var(--text-muted);">Ordenar contratos:</span>
+                    <button class="btn small cobrancas-view-btn active" id="btn-ord-recentes" onclick="setOrdenacaoContratos('recentes')">🆕 Mais Recentes Primeiro</button>
+                    <button class="btn small cobrancas-view-btn" id="btn-ord-ativos" onclick="setOrdenacaoContratos('ativos')">🔥 Ativos Primeiro</button>
+                </div>
                 <div id="clientes-lista-container"></div>
             </div>
 
@@ -1087,6 +1092,15 @@
                 document.getElementById('btn-view-mes').classList.toggle('active', modo === 'mes');
             };
 
+            // Alterna a ordem dos contratos dentro de cada cliente: mais recentes primeiro, ou ativos primeiro
+            let ordenacaoContratosAtual = 'recentes';
+            window.setOrdenacaoContratos = function(modo) {
+                ordenacaoContratosAtual = modo;
+                document.getElementById('btn-ord-recentes').classList.toggle('active', modo === 'recentes');
+                document.getElementById('btn-ord-ativos').classList.toggle('active', modo === 'ativos');
+                renderizarTudo();
+            };
+
 
             window.toggleBalanceteMes = function(mesAno) {
                 const box = document.getElementById(`balancete-detalhe-${mesAno}`);
@@ -1206,7 +1220,24 @@
                     if(openCardsState[cli.id] === undefined) openCardsState[cli.id] = false;
                     let isOpenClass = openCardsState[cli.id] ? 'open' : '';
 
-                    (cli.emprestimos || []).forEach(emp => {
+                    // Ordena os contratos do cliente: mais recentes primeiro (por data de início),
+                    // ou contratos ainda ativos (com saldo em aberto) primeiro
+                    let listaEmprestimosOrdenada = [...(cli.emprestimos || [])];
+                    function saldoDevedorEmprestimo(e) {
+                        return (e.parcelas || []).reduce((acc, p) => acc + (p.valor - p.pago), 0);
+                    }
+                    if (ordenacaoContratosAtual === 'ativos') {
+                        listaEmprestimosOrdenada.sort((a, b) => {
+                            const ativoA = saldoDevedorEmprestimo(a) > 0.01;
+                            const ativoB = saldoDevedorEmprestimo(b) > 0.01;
+                            if (ativoA !== ativoB) return ativoA ? -1 : 1;
+                            return parseInputDate(b.dataInicio) - parseInputDate(a.dataInicio);
+                        });
+                    } else {
+                        listaEmprestimosOrdenada.sort((a, b) => parseInputDate(b.dataInicio) - parseInputDate(a.dataInicio));
+                    }
+
+                    listaEmprestimosOrdenada.forEach(emp => {
                         let tP = 0, tS = 0, tTotalAtual = 0, tJurosAcumulados = 0;
                         let htmlParcs = '';
                         
