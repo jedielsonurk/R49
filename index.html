@@ -465,8 +465,8 @@
                             <div><label>Intervalo Fixo (Dias) *</label><input type="number" id="cad-intervalo" value="7" required min="1"></div>
                         </div>
                         <div class="form-group inline">
-                            <div><label>Data de Início *</label><input type="date" id="cad-data-inicio" required></div>
-                            <div><label>Data Final (Opcional limite)</label><input type="date" id="cad-data-final"></div>
+                            <div><label>Data de Início *</label><input type="text" id="cad-data-inicio" class="input-data-br" required placeholder="dd/mm/aaaa" inputmode="numeric" maxlength="10"></div>
+                            <div><label>Data Final (Opcional limite)</label><input type="text" id="cad-data-final" class="input-data-br" placeholder="dd/mm/aaaa" inputmode="numeric" maxlength="10"></div>
                         </div>
                         
                         <div class="form-group">
@@ -670,6 +670,30 @@
 
             function formatReal(v) { return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
             function parseInputDate(str) { if(!str) return new Date(); const p = str.split('-'); return new Date(p[0], p[1] - 1, p[2], 12, 0, 0); }
+
+            // Converte texto digitado "dd/mm/aaaa" para o formato interno "yyyy-mm-dd".
+            // Retorna '' se a data estiver incompleta ou inválida.
+            function converterDataBRParaISO(strBR) {
+                if (!strBR) return '';
+                const partes = strBR.split('/');
+                if (partes.length !== 3) return '';
+                const [dd, mm, aaaa] = partes;
+                if (dd.length !== 2 || mm.length !== 2 || aaaa.length !== 4) return '';
+                const d = parseInt(dd, 10), m = parseInt(mm, 10), a = parseInt(aaaa, 10);
+                if (isNaN(d) || isNaN(m) || isNaN(a) || d < 1 || d > 31 || m < 1 || m > 12) return '';
+                return `${aaaa}-${mm}-${dd}`;
+            }
+
+            // Aplica a máscara dd/mm/aaaa automaticamente enquanto o usuário digita números
+            function aplicarMascaraDataBR(input) {
+                input.addEventListener('input', function() {
+                    let v = input.value.replace(/\D/g, '').slice(0, 8);
+                    if (v.length >= 5) v = `${v.slice(0,2)}/${v.slice(2,4)}/${v.slice(4)}`;
+                    else if (v.length >= 3) v = `${v.slice(0,2)}/${v.slice(2)}`;
+                    input.value = v;
+                });
+            }
+            document.querySelectorAll('.input-data-br').forEach(aplicarMascaraDataBR);
             function formatDateBR(ds) { if(!ds) return ''; return parseInputDate(ds).toLocaleDateString('pt-BR'); }
             function getDiaSemanaExtenso(ds) { const d = parseInputDate(ds); return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d.getDay()]; }
             function getDiaSemanaCompleto(d) { return ['Domingo', 'Segunda-Feira', 'Terça-Feira', 'Quarta-Feira', 'Quinta-Feira', 'Sexta-Feira', 'Sábado'][d.getDay()]; }
@@ -773,9 +797,12 @@
                 const vEmprestado = parseFloat(document.getElementById('cad-v-emprestado').value);
                 const vTotal = parseFloat(document.getElementById('cad-v-total').value);
                 const qtd = parseInt(document.getElementById('cad-qtd-parcelas').value);
-                const dInicio = document.getElementById('cad-data-inicio').value;
-                const dFinal = document.getElementById('cad-data-final').value;
+                const dInicio = converterDataBRParaISO(document.getElementById('cad-data-inicio').value);
+                const dFinal = converterDataBRParaISO(document.getElementById('cad-data-final').value);
                 const intervalo = parseInt(document.getElementById('cad-intervalo').value);
+
+                if (!dInicio) return showToast("Digite a Data de Início no formato dd/mm/aaaa.", "error");
+                if (document.getElementById('cad-data-final').value && !dFinal) return showToast("Data Final inválida — use o formato dd/mm/aaaa.", "error");
 
                 let diasMarcados = [];
                 if(document.getElementById('chk-dom').checked) diasMarcados.push(0);
@@ -1584,7 +1611,7 @@
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
                 const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", "romao_dados_backup.json");
                 document.body.appendChild(dl); dl.click(); dl.remove();
-                showToast("Cópia de segurança baixada com sucesso!", "success");
+                showToas("Cópia de segurança baixada com sucesso!", "success");
             });
 
             // Filtro de período da aba Perdas: padrão = Novembro mais recente até hoje
