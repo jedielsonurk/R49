@@ -231,6 +231,25 @@
         .cobrancas-dia-header strong { font-size: 1rem; text-transform: capitalize; }
         .cobrancas-dia-body { padding: 0.5rem 1.25rem; }
         .cobrancas-dia-body .table-responsive { margin: 0; }
+
+        .campo-data-custom { cursor: pointer; }
+        .mini-calendario-popup {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+            padding: 0.75rem;
+            width: 260px;
+            z-index: 5000;
+        }
+        .mini-calendario-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; color: var(--text-main); }
+        .mini-calendario-nav { background: none; border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; }
+        .mini-calendario-semana { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; }
+        .mini-calendario-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .mini-calendario-dia { text-align: center; padding: 0.5rem 0; border-radius: 4px; cursor: pointer; font-size: 0.9rem; color: var(--text-main); }
+        .mini-calendario-dia:hover { background-color: var(--bg-panel-light); }
+        .mini-calendario-dia.selecionado { background-color: var(--primary); color: #000; font-weight: 700; }
+        .mini-calendario-limpar { width: 100%; margin-top: 0.5rem; background: none; border: 1px solid var(--border-color); color: var(--text-muted); border-radius: 4px; padding: 0.4rem; cursor: pointer; font-size: 0.8rem; }
         .panel-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 6px; margin-bottom: 1.5rem; }
         .panel-box h3 { margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
 
@@ -340,6 +359,21 @@
                     <div class="card-kpi"><div class="label">Lucro Recebido (Mês)</div><div class="value green" id="kpi-lucro-mes">R$ 0,00</div></div>
                     <div class="card-kpi"><div class="label">Lucro Líquido (Mês, já descontando Meus Gastos)</div><div class="value" id="kpi-lucro-liquido-mes">R$ 0,00</div></div>
                 </div>
+
+                <div class="row-split">
+                    <div class="panel-box">
+                        <h3>📈 Lucro de Juros por Mês</h3>
+                        <div id="grafico-lucro-mensal" style="min-height:220px; display:flex; align-items:center; justify-content:center;"></div>
+                    </div>
+                    <div class="panel-box">
+                        <h3>🥧 Status das Parcelas</h3>
+                        <div id="grafico-status-parcelas" style="min-height:220px; display:flex; align-items:center; justify-content:center;"></div>
+                    </div>
+                </div>
+                <div class="panel-box">
+                    <h3>📊 Recebido vs. Atrasado (situação atual)</h3>
+                    <div id="grafico-recebido-atrasado" style="min-height:120px; display:flex; align-items:center; justify-content:center;"></div>
+                </div>
             </div>
 
             <div id="tab-cobrancas" class="tab-content">
@@ -410,7 +444,7 @@
                         <h3>Registrar Gasto</h3>
                         <form id="form-gasto">
                             <div class="form-group"><label>Valor (R$)</label><input type="number" step="0.01" id="gasto-valor" required placeholder="0.00"></div>
-                            <div class="form-group"><label>Data</label><input type="date" id="gasto-data" required></div>
+                            <div class="form-group"><label>Data</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="gasto-data" required></div>
                             <div class="form-group"><label>Descrição</label><input type="text" id="gasto-desc" required placeholder="Ex: Boleto da faculdade"></div>
                             <button type="submit" class="btn danger" style="width:100%;">💸 Registrar Gasto (retira do caixa)</button>
                         </form>
@@ -418,7 +452,7 @@
                     </div>
                     <div class="panel-box">
                         <h3>Meus Gastos Registrados</h3>
-                        <div class="form-group inline"><input type="text" id="filtro-gasto-desc" placeholder="Filtrar por descrição"><input type="date" id="filtro-gasto-data"></div>
+                        <div class="form-group inline"><input type="text" id="filtro-gasto-desc" placeholder="Filtrar por descrição"><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="filtro-gasto-data"></div>
                         <div class="table-responsive"><table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th></th></tr></thead><tbody id="tbl-gastos-corpo"></tbody></table></div>
                     </div>
                 </div>
@@ -432,7 +466,7 @@
                             <div class="form-group"><label>Nome do Cliente</label><input type="text" id="dep-nome" required></div>
                             <div class="form-group inline">
                                 <div><label>Valor (R$)</label><input type="number" step="0.01" id="dep-valor" required></div>
-                                <div><label>Data</label><input type="date" id="dep-data" required></div>
+                                <div><label>Data</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="dep-data" required></div>
                             </div>
                             <div class="form-group"><label>Observação</label><input type="text" id="dep-obs"></div>
                             <button type="submit" class="btn good" style="width:100%;">Salvar Depósito</button>
@@ -440,7 +474,7 @@
                     </div>
                     <div class="panel-box">
                         <h3>Registros</h3>
-                        <div class="form-group inline"><input type="text" id="filtro-dep-nome" placeholder="Filtrar por Nome"><input type="date" id="filtro-dep-data"></div>
+                        <div class="form-group inline"><input type="text" id="filtro-dep-nome" placeholder="Filtrar por Nome"><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="filtro-dep-data"></div>
                         <div style="margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);" id="dep-meta-info">Total: R$ 0,00 | Qtd: 0</div>
                         <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Data</th><th>Valor</th><th>Obs</th></tr></thead><tbody id="tbl-depositos-corpo"></tbody></table></div>
                     </div>
@@ -465,8 +499,8 @@
                             <div><label>Intervalo Fixo (Dias) *</label><input type="number" id="cad-intervalo" value="7" required min="1"></div>
                         </div>
                         <div class="form-group inline">
-                            <div><label>Data de Início *</label><input type="date" id="cad-data-inicio" required></div>
-                            <div><label>Data Final (Opcional limite)</label><input type="date" id="cad-data-final"></div>
+                            <div><label>Data de Início *</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="cad-data-inicio" required></div>
+                            <div><label>Data Final (Opcional limite)</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="cad-data-final"></div>
                         </div>
                         
                         <div class="form-group">
@@ -539,8 +573,8 @@
                 <div class="panel-box">
                     <h3>Filtrar por período</h3>
                     <div class="form-group inline">
-                        <div><label>De</label><input type="date" id="filtro-perda-ini"></div>
-                        <div><label>Até</label><input type="date" id="filtro-perda-fim"></div>
+                        <div><label>De</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="filtro-perda-ini"></div>
+                        <div><label>Até</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="filtro-perda-fim"></div>
                     </div>
                 </div>
                 <div class="panel-box">
@@ -673,6 +707,121 @@
             function formatDateBR(ds) { if(!ds) return ''; return parseInputDate(ds).toLocaleDateString('pt-BR'); }
             function getDiaSemanaExtenso(ds) { const d = parseInputDate(ds); return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d.getDay()]; }
             function getDiaSemanaCompleto(d) { return ['Domingo', 'Segunda-Feira', 'Terça-Feira', 'Quarta-Feira', 'Quinta-Feira', 'Sexta-Feira', 'Sábado'][d.getDay()]; }
+
+            // ===== Calendário customizado (substitui o seletor nativo do navegador) =====
+            // Criado porque o calendário nativo (input type="date") não abre corretamente
+            // em alguns tablets/navegadores. Este calendário é 100% nosso e funciona igual
+            // em qualquer aparelho. O valor guardado no campo continua no formato yyyy-mm-dd
+            // (igual ao input type="date" original), então nada mais no sistema precisou mudar.
+            let calendarioCustomAberto = null;
+
+            function fecharCalendarioCustom() {
+                if (calendarioCustomAberto) {
+                    calendarioCustomAberto.popupEl.remove();
+                    document.removeEventListener('click', fecharCalendarioAoClicarFora, true);
+                    calendarioCustomAberto = null;
+                }
+            }
+
+            function fecharCalendarioAoClicarFora(e) {
+                if (calendarioCustomAberto &&
+                    !calendarioCustomAberto.popupEl.contains(e.target) &&
+                    e.target !== calendarioCustomAberto.input) {
+                    fecharCalendarioCustom();
+                }
+            }
+
+            function abrirCalendarioCustom(input) {
+                if (calendarioCustomAberto && calendarioCustomAberto.input === input) return;
+                fecharCalendarioCustom();
+
+                const valorAtualISO = input.value;
+                let baseDate = valorAtualISO ? parseInputDate(valorAtualISO) : new Date();
+                baseDate.setHours(12, 0, 0, 0);
+                let mesExibido = baseDate.getMonth();
+                let anoExibido = baseDate.getFullYear();
+
+                const popup = document.createElement('div');
+                popup.className = 'mini-calendario-popup';
+
+                function renderizarMes() {
+                    const nomesMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+                    const primeiroDia = new Date(anoExibido, mesExibido, 1);
+                    const ultimoDia = new Date(anoExibido, mesExibido + 1, 0);
+                    const diaSemanaInicio = primeiroDia.getDay();
+                    let diasHtml = '';
+                    for (let i = 0; i < diaSemanaInicio; i++) diasHtml += `<div></div>`;
+                    for (let d = 1; d <= ultimoDia.getDate(); d++) {
+                        const dataStr = `${anoExibido}-${String(mesExibido + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        const selecionado = dataStr === valorAtualISO;
+                        diasHtml += `<div class="mini-calendario-dia${selecionado ? ' selecionado' : ''}" data-data="${dataStr}">${d}</div>`;
+                    }
+                    popup.innerHTML = `
+                        <div class="mini-calendario-header">
+                            <button type="button" class="mini-calendario-nav" data-nav="-1">‹</button>
+                            <strong>${nomesMeses[mesExibido]} ${anoExibido}</strong>
+                            <button type="button" class="mini-calendario-nav" data-nav="1">›</button>
+                        </div>
+                        <div class="mini-calendario-semana"><div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div></div>
+                        <div class="mini-calendario-grid">${diasHtml}</div>
+                        <button type="button" class="mini-calendario-limpar">Limpar data</button>
+                    `;
+                    popup.querySelectorAll('.mini-calendario-nav').forEach(btn => {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            mesExibido += parseInt(btn.dataset.nav, 10);
+                            if (mesExibido < 0) { mesExibido = 11; anoExibido--; }
+                            if (mesExibido > 11) { mesExibido = 0; anoExibido++; }
+                            renderizarMes();
+                        });
+                    });
+                    popup.querySelectorAll('.mini-calendario-dia[data-data]').forEach(dia => {
+                        dia.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            input.value = dia.dataset.data;
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                            fecharCalendarioCustom();
+                        });
+                    });
+                    popup.querySelector('.mini-calendario-limpar').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        input.value = '';
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        fecharCalendarioCustom();
+                    });
+                }
+                renderizarMes();
+
+                document.body.appendChild(popup);
+                const rect = input.getBoundingClientRect();
+                popup.style.position = 'absolute';
+                let top = window.scrollY + rect.bottom + 4;
+                let left = window.scrollX + rect.left;
+                // Evita o popup sair da tela pela direita
+                const larguraPopup = 260;
+                if (left + larguraPopup > window.scrollX + window.innerWidth - 8) {
+                    left = window.scrollX + window.innerWidth - larguraPopup - 8;
+                }
+                popup.style.top = `${top}px`;
+                popup.style.left = `${left}px`;
+
+                calendarioCustomAberto = { input, popupEl: popup };
+                setTimeout(() => document.addEventListener('click', fecharCalendarioAoClicarFora, true), 0);
+            }
+
+            // Delegação de evento: funciona também nos campos de data criados dinamicamente
+            // (um por empréstimo), que são recriados a cada renderizarTudo()
+            document.addEventListener('focus', function(e) {
+                if (e.target && e.target.classList && e.target.classList.contains('campo-data-custom')) {
+                    abrirCalendarioCustom(e.target);
+                }
+            }, true);
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.classList && e.target.classList.contains('campo-data-custom')) {
+                    e.stopPropagation();
+                    abrirCalendarioCustom(e.target);
+                }
+            });
             
             function calcularDiasAtraso(dv) {
                 const hoje = new Date(); hoje.setHours(0,0,0,0);
@@ -1082,6 +1231,67 @@
                 }
             };
 
+            // ===== Gráficos do Dashboard (SVG puro, sem depender de bibliotecas externas) =====
+            function desenharGraficoBarras(containerId, dados, corBarra) {
+                const el = document.getElementById(containerId);
+                if (!el) return;
+                if (!dados.length || dados.every(d => d.valor === 0)) {
+                    el.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Sem dados suficientes ainda.</p>';
+                    return;
+                }
+                const largura = 320, altura = 200, margemBaixo = 30, margemEsq = 10;
+                const maxValor = Math.max(...dados.map(d => d.valor), 1);
+                const larguraBarra = (largura - margemEsq) / dados.length;
+                let barrasSvg = '';
+                dados.forEach((d, i) => {
+                    const alturaBarra = (d.valor / maxValor) * (altura - margemBaixo - 20);
+                    const x = margemEsq + i * larguraBarra + larguraBarra * 0.15;
+                    const wBarra = larguraBarra * 0.7;
+                    const y = altura - margemBaixo - alturaBarra;
+                    barrasSvg += `
+                        <rect x="${x}" y="${y}" width="${wBarra}" height="${alturaBarra}" fill="${d.cor || corBarra}" rx="3"></rect>
+                        <text x="${x + wBarra/2}" y="${y - 6}" text-anchor="middle" font-size="10" fill="#e0e0e0">${formatReal(d.valor).replace('R$','').trim()}</text>
+                        <text x="${x + wBarra/2}" y="${altura - 10}" text-anchor="middle" font-size="10" fill="#a0a0a0">${d.rotulo}</text>
+                    `;
+                });
+                el.innerHTML = `<svg viewBox="0 0 ${largura} ${altura}" style="width:100%; max-width:360px; height:auto;">${barrasSvg}</svg>`;
+            }
+
+            function desenharGraficoPizza(containerId, fatias) {
+                const el = document.getElementById(containerId);
+                if (!el) return;
+                const total = fatias.reduce((acc, f) => acc + f.valor, 0);
+                if (total <= 0) {
+                    el.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Nenhuma parcela cadastrada ainda.</p>';
+                    return;
+                }
+                const raio = 70, cx = 90, cy = 90;
+                let anguloAtual = -90;
+                let fatiasSvg = '';
+                fatias.forEach(f => {
+                    if (f.valor <= 0) return;
+                    const fracao = f.valor / total;
+                    const anguloFinal = anguloAtual + fracao * 360;
+                    const x1 = cx + raio * Math.cos(anguloAtual * Math.PI / 180);
+                    const y1 = cy + raio * Math.sin(anguloAtual * Math.PI / 180);
+                    const x2 = cx + raio * Math.cos(anguloFinal * Math.PI / 180);
+                    const y2 = cy + raio * Math.sin(anguloFinal * Math.PI / 180);
+                    const largeArc = (anguloFinal - anguloAtual) > 180 ? 1 : 0;
+                    fatiasSvg += `<path d="M${cx},${cy} L${x1},${y1} A${raio},${raio} 0 ${largeArc} 1 ${x2},${y2} Z" fill="${f.cor}"></path>`;
+                    anguloAtual = anguloFinal;
+                });
+                let legendaHtml = fatias.filter(f => f.valor > 0).map(f => `
+                    <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.8rem; margin-top:0.3rem;">
+                        <span style="width:10px; height:10px; border-radius:2px; background:${f.cor}; display:inline-block;"></span>
+                        ${f.rotulo}: <strong>${f.valor}</strong>
+                    </div>`).join('');
+                el.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; justify-content:center;">
+                        <svg viewBox="0 0 180 180" style="width:150px; height:150px;">${fatiasSvg}</svg>
+                        <div>${legendaHtml}</div>
+                    </div>`;
+            }
+
             // Alterna entre as visualizações Dia / Semana / Mês na aba Cobranças
             let cobrancasViewAtual = 'dia';
             window.setCobrancasView = function(modo) {
@@ -1188,6 +1398,7 @@
             function renderizarTudo() {
                 const hj = new Date().toISOString().split('T')[0];
                 let capRua = 0, retEsp = 0, v3d = 0, parAtr = 0, lucSem = 0, lucMes = 0, recHj = 0, totAtr = 0;
+                let contParcPagas = 0, contParcPendentes = 0, contParcAtrasadas = 0;
                 let htmlClis = '', htmlHj = '', htmlAtr = '', htmlInad = '', bAgr = {};
                 
                 const dHj = new Date(), d7 = new Date(); d7.setDate(dHj.getDate()-7); 
@@ -1260,12 +1471,16 @@
                             if(sP > 0) {
                                 if(dAtr > 0) {
                                     parAtr++; totAtr += sP;
+                                    contParcAtrasadas++;
                                     htmlAtr += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td>${formatDateBR(p.dataVencimento)}</td><td style="color:#ff5252">${formatReal(sP)}</td><td>${dAtr} dias</td></tr>`;
                                     htmlInad += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td>${formatDateBR(p.dataVencimento)}</td><td>${formatReal(p.valorBase)}</td><td>${formatReal(sP)}</td><td>${dAtr}</td></tr>`;
                                 } else {
+                                    contParcPendentes++;
                                     if(p.dataVencimento === hj) { recHj += sP; htmlHj += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td style="color:#69f0ae">${formatReal(sP)}</td></tr>`; }
                                     if(dAtr === 0 && parseInputDate(p.dataVencimento) <= new Date(dHj.getTime() + 3*24*60*60*1000)) v3d++;
                                 }
+                            } else {
+                                contParcPagas++;
                             }
 
                             // Calcula o lucro (juros) de cada pagamento em ordem cronológica, acumulando
@@ -1327,18 +1542,18 @@
                                     <input type="number" step="0.01" id="abate-${emp.id}" style="width:110px; padding:0.4rem;" placeholder="0.00">
                                     <div style="display:flex; flex-direction:column; gap:0.2rem;">
                                         <label style="margin:0; font-size:0.7rem;">Data do pagamento</label>
-                                        <input type="date" id="abate-data-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                        <input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="abate-data-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
                                     </div>
                                     <button class="btn good small" onclick="aplicarAbate('${cli.id}', '${emp.id}')">💰 Receber / Abater</button>
                                     
                                     <div style="display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem; margin-left:auto; border-left:1px solid var(--border-color); padding-left:1rem;">
                                         <div style="display:flex; flex-direction:column; gap:0.2rem;">
                                             <label style="margin:0; font-size:0.7rem;">De</label>
-                                            <input type="date" id="juros-data-ini-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                            <input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="juros-data-ini-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
                                         </div>
                                         <div style="display:flex; flex-direction:column; gap:0.2rem;">
                                             <label style="margin:0; font-size:0.7rem;">Até</label>
-                                            <input type="date" id="juros-data-fim-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                            <input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="juros-data-fim-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
                                         </div>
                                         <input type="number" step="0.1" id="juros-taxa-${emp.id}" value="3" style="width:70px; padding:0.4rem; text-align:center;" placeholder="%">
                                         <label style="margin:0; font-size:0.85rem;">%</label>
@@ -1349,7 +1564,7 @@
                                 <div class="loan-actions" style="background:rgba(255,82,82,0.06); border:1px solid rgba(255,82,82,0.25);">
                                     <div style="display:flex; flex-direction:column; gap:0.2rem;">
                                         <label style="margin:0; font-size:0.7rem;">Data da perda</label>
-                                        <input type="date" id="perda-data-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                        <input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="perda-data-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
                                     </div>
                                     <input type="text" id="perda-obs-${emp.id}" placeholder="Observação (opcional)" style="flex:1; min-width:150px; padding:0.4rem;">
                                     <button class="btn danger small" onclick="registrarPerdaEmp('${cli.id}', '${emp.id}')">📉 Dar Baixa (Perda)</button>
@@ -1422,8 +1637,7 @@
                 document.getElementById('tbl-depositos-corpo').innerHTML = hDep || '<tr><td colspan="4" style="text-align:center;">Nenhum depósito bancário encontrado.</td></tr>';
                 document.getElementById('dep-meta-info').innerText = `Total: ${formatReal(tDep)} | Qtd: ${cDep}`;
 
-                let hRC = ''; 
-                (state.transacoes || []).forEach(t => { 
+                let hRC = ''; (state.transacoes || []).forEach(t => { 
                     let cl = t.tipo==='injecao'||t.tipo==='recebimento'?'#69f0ae':'#ff5252'; 
                     hRC += `<tr><td>${new Date(t.data).toLocaleString()}</td><td><span style="color:${cl}">${t.tipo}</span></td><td>${t.descricao}</td><td style="color:${cl}">${formatReal(t.valor)}</td></tr>`; 
                 });
@@ -1456,6 +1670,29 @@
                     </div>`;
                 });
                 document.getElementById('balancete-container').innerHTML = hBal || '<p style="color:var(--text-muted)">Nenhum lucro de juros recebido no período.</p>';
+
+                // ===== Gráficos do Dashboard =====
+                // Lucro de Juros por Mês (últimos 6 meses com dados, do mais antigo pro mais recente)
+                const mesesOrdenados = Object.keys(bAgr).sort();
+                const ultimosMeses = mesesOrdenados.slice(-6);
+                const dadosGraficoLucro = ultimosMeses.map(m => ({
+                    rotulo: `${m.split('-')[1]}/${m.split('-')[0].slice(2)}`,
+                    valor: bAgr[m].total
+                }));
+                desenharGraficoBarras('grafico-lucro-mensal', dadosGraficoLucro, '#69f0ae');
+
+                // Status das parcelas (portfólio inteiro)
+                desenharGraficoPizza('grafico-status-parcelas', [
+                    { rotulo: 'Pagas', valor: contParcPagas, cor: '#69f0ae' },
+                    { rotulo: 'Em dia (pendentes)', valor: contParcPendentes, cor: '#f9a825' },
+                    { rotulo: 'Atrasadas', valor: contParcAtrasadas, cor: '#ff5252' }
+                ]);
+
+                // Recebido (a receber, em dia) vs Atrasado
+                desenharGraficoBarras('grafico-recebido-atrasado', [
+                    { rotulo: 'A Receber (em dia)', valor: retEsp - totAtr, cor: '#69f0ae' },
+                    { rotulo: 'Atrasado', valor: totAtr, cor: '#ff5252' }
+                ]);
 
                 // ===== Aba Perdas =====
                 const perdaIniEl = document.getElementById('filtro-perda-ini');
