@@ -3,48 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Romão Cred - Interface Cibernética</title>
-    <!-- Google Fonts Inter & Fira Code para um toque tecnológico -->
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js para os gráficos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Romão Cred - Gestão de Crédito</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         :root {
-            --bg-primary: #020617;
-            --bg-secondary: #090d23;
-            --bg-card: rgba(13, 22, 48, 0.7);
-            --border-color: rgba(0, 240, 255, 0.2);
-            --border-glow: rgba(0, 240, 255, 0.6);
-            --text-main: #e2e8f0;
-            --text-muted: #64748b;
-            --accent-cyan: #00f0ff;
-            --accent-green: #00ff66;
-            --accent-red: #ff3366;
-            --accent-blue: #2563eb;
+            --bg-main: #0b0b0b;
+            --bg-panel: #141414;
+            --bg-panel-light: #1a1a1a;
+            --border-color: #333333;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --primary: #cccccc;
+            --primary-hover: #e0e0e0;
+            --success: #2e7d32;
+            --success-bg: #1b5e20;
+            --danger: #d32f2f;
+            --danger-bg: #b71c1c;
+            --warning: #f9a825;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
         }
 
         body {
-            background-color: var(--bg-primary);
+            background-color: var(--bg-main);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            background-image: 
-                radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.05) 0%, transparent 60%),
-                linear-gradient(to right, rgba(2, 6, 23, 0.8) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(2, 6, 23, 0.8) 1px, transparent 1px);
-            background-size: 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        #login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            background-color: #111111;
+            padding: 1rem;
+        }
+
+        .login-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            padding: 2.5rem;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.7);
+        }
+
+        .logo-metalico {
+            background: linear-gradient(180deg, #f5f5f5 0%, #cfcfcf 35%, #9a9a9a 55%, #e8e8e8 75%, #b5b5b5 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.15), 0 2px 6px rgba(0,0,0,0.6);
+            font-weight: 700;
+            letter-spacing: 3px;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+        .logo-metalico .colchete {
+            -webkit-text-fill-color: initial;
+            background: none;
+            color: #d0d0d0;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.2), 0 2px 6px rgba(0,0,0,0.6);
+            font-size: 1.35em;
+            font-weight: 900;
+            margin-right: 0.15em;
+            display: inline-block;
+        }
+        /* Símbolo maior só dentro do cabeçalho do sistema (não afeta a tela de login) */
+        header .colchete {
+            font-size: 1.5em;
+        }
+        /* Símbolo menor só na tela de login */
+        .login-card .colchete {
+            font-size: 1.1em;
+        }
+
+        .login-card h2 {
+            margin-bottom: 0.6rem;
+            text-align: center;
+            letter-spacing: 3px;
+            font-size: 2rem;
+            text-transform: uppercase;
+        }
+
+        .login-card .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-top: 1px solid #666;
+            padding-top: 0.6rem;
+        }
+
+        #app-screen {
+            display: none;
+            flex-direction: column;
+            flex: 1;
         }
 
         header {
-            background-color: var(--bg-secondary);
+            background-color: var(--bg-panel);
             border-bottom: 1px solid var(--border-color);
             padding: 1rem 2rem;
             display: flex;
@@ -52,61 +119,40 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 1rem;
-            box-shadow: 0 4px 20px rgba(0, 240, 255, 0.05);
         }
 
-        .logo-area h1 {
-            font-family: 'Fira Code', monospace;
-            font-size: 1.4rem;
-            color: var(--text-main);
-            letter-spacing: 2px;
+        .brand h1 { font-size: 1.6rem; letter-spacing: 2px; text-transform: uppercase; margin: 0; }
+        .brand span { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; display: block; border-top: 1px solid #666; padding-top: 0.5rem; margin-top: 0.5rem; }
+        .header-actions { display: flex; gap: 1rem; align-items: center; }
+
+        nav.tabs-nav {
+            background-color: var(--bg-panel-light);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
-        }
-
-        .logo-area span {
-            color: var(--accent-cyan);
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 0.5rem;
             overflow-x: auto;
-            max-width: 100%;
-            padding-bottom: 4px;
+            white-space: nowrap;
         }
 
         .tab-btn {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
+            background: none;
+            border: none;
             color: var(--text-muted);
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
+            padding: 1rem 1.5rem;
             cursor: pointer;
-            font-weight: 500;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
         }
 
-        .tab-btn:hover {
-            color: var(--accent-cyan);
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
-        }
-
+        .tab-btn:hover { color: var(--text-main); background-color: rgba(255,255,255,0.02); }
         .tab-btn.active {
-            background-color: rgba(0, 240, 255, 0.1);
-            color: var(--accent-cyan);
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+            color: var(--text-main);
+            border-bottom-color: var(--primary);
+            background-color: var(--bg-panel);
+            font-weight: 600;
         }
 
-        main {
+        main.content {
             padding: 2rem;
             flex: 1;
             max-width: 1400px;
@@ -114,1020 +160,1685 @@
             margin: 0 auto;
         }
 
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.4s ease forwards;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .kpi-grid {
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group.inline {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.25rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
         }
 
-        .kpi-card {
-            background: var(--bg-card);
+        label { display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem; }
+        input, select, textarea {
+            width: 100%;
+            background-color: var(--bg-main);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 1.25rem;
-            position: relative;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-
-        /* Detalhe tecnológico nos cantos dos cards */
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0;
-            width: 6px; height: 6px;
-            border-top: 2px solid var(--accent-cyan);
-            border-left: 2px solid var(--accent-cyan);
-        }
-
-        .kpi-card:hover {
-            border-color: var(--border-glow);
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .kpi-title {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 0.5rem;
-            font-family: 'Fira Code', monospace;
-        }
-
-        .kpi-value {
-            font-size: 1.6rem;
-            font-weight: 700;
             color: var(--text-main);
-            font-family: 'Fira Code', monospace;
-        }
-
-        .panel-box {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            backdrop-filter: blur(10px);
-            position: relative;
-        }
-
-        .panel-title {
-            font-size: 1.05rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-family: 'Fira Code', monospace;
-            letter-spacing: 0.5px;
-            color: var(--accent-cyan);
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.5rem;
-        }
-
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: 0.85rem;
-        }
-
-        th, td {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
-        th {
-            color: var(--text-muted);
-            font-weight: 600;
-            font-family: 'Fira Code', monospace;
-            background-color: rgba(0, 240, 255, 0.02);
-        }
-
-        tr:hover {
-            background-color: rgba(0, 240, 255, 0.03);
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-size: 1rem;
         }
 
         .btn {
-            background-color: transparent;
-            color: var(--accent-cyan);
-            border: 1px solid var(--accent-cyan);
-            padding: 0.55rem 1.1rem;
+            background-color: var(--primary);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1.5rem;
             border-radius: 4px;
             cursor: pointer;
             font-weight: 600;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-        }
-
-        .btn:hover {
-            background-color: rgba(0, 240, 255, 0.15);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-        }
-
-        .btn.good { border-color: var(--accent-green); color: var(--accent-green); }
-        .btn.good:hover { background-color: rgba(0, 255, 102, 0.15); box-shadow: 0 0 15px rgba(0, 255, 102, 0.4); }
-
-        .btn.danger { border-color: var(--accent-red); color: var(--accent-red); }
-        .btn.danger:hover { background-color: rgba(255, 51, 102, 0.15); box-shadow: 0 0 15px rgba(255, 51, 102, 0.4); }
-
-        .btn.secondary { border-color: var(--text-muted); color: var(--text-muted); }
-        .btn.secondary:hover { border-color: var(--text-main); color: var(--text-main); }
-
-        .btn.small { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
-
-        input, select, textarea {
-            background-color: rgba(2, 6, 23, 0.6);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 0.6rem 0.8rem;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            width: 100%;
-            font-family: 'Inter', sans-serif;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .client-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            margin-bottom: 1rem;
-            overflow: hidden;
-            transition: border-color 0.3s;
-        }
-
-        .client-card:hover {
-            border-color: var(--border-glow);
-        }
-
-        .client-header {
-            padding: 1rem 1.25rem;
-            background-color: rgba(0, 240, 255, 0.02);
-            display: flex;
-            justify-content: space-between;
+            display: inline-flex;
             align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn.good { background-color: var(--success); color: #fff; }
+        .btn.danger { background-color: var(--danger); color: #fff; }
+        .btn.secondary { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); }
+        .btn.small { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .card-kpi { background-color: var(--bg-panel); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 6px; }
+        .card-kpi .label { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
+        .card-kpi .value { font-size: 1.8rem; font-weight: 700; margin-top: 0.5rem; }
+        .card-kpi .value.red { color: #ff5252; }
+        .card-kpi .value.green { color: #69f0ae; }
+
+        .row-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 2rem; }
+
+        .cobrancas-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+        .cobrancas-header-icon { font-size: 1.6rem; }
+        .cobrancas-header-title { font-size: 1.6rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-main); }
+        .cobrancas-data-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; padding: 1.25rem; text-align: center; font-size: 1.15rem; font-weight: 600; color: var(--text-main); margin-bottom: 1.5rem; }
+        .cobrancas-section-title { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+        .cobrancas-section-title.verde { color: #69f0ae; }
+        .cobrancas-section-title.vermelho { color: #ff5252; }
+        .dot-status { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        .dot-status.verde { background-color: #69f0ae; }
+        .dot-status.vermelho { background-color: #ff5252; }
+
+        .cobrancas-view-btn { background-color: var(--bg-panel-light); color: var(--text-muted); border: 1px solid var(--border-color); }
+        .cobrancas-view-btn.active { background-color: var(--primary); color: #000; font-weight: 600; }
+        .cobrancas-dia-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 1rem; overflow: hidden; }
+        .cobrancas-dia-header { background-color: var(--bg-panel-light); padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+        .cobrancas-dia-header strong { font-size: 1rem; text-transform: capitalize; }
+        .cobrancas-dia-body { padding: 0.5rem 1.25rem; }
+        .cobrancas-dia-body .table-responsive { margin: 0; }
+
+        .campo-data-custom { cursor: pointer; }
+        .mini-calendario-popup {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+            padding: 0.75rem;
+            width: 260px;
+            z-index: 5000;
+        }
+        .mini-calendario-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; color: var(--text-main); }
+        .mini-calendario-nav { background: none; border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; }
+        .mini-calendario-semana { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; }
+        .mini-calendario-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .mini-calendario-dia { text-align: center; padding: 0.5rem 0; border-radius: 4px; cursor: pointer; font-size: 0.9rem; color: var(--text-main); }
+        .mini-calendario-dia:hover { background-color: var(--bg-panel-light); }
+        .mini-calendario-dia.selecionado { background-color: var(--primary); color: #000; font-weight: 700; }
+        .mini-calendario-limpar { width: 100%; margin-top: 0.5rem; background: none; border: 1px solid var(--border-color); color: var(--text-muted); border-radius: 4px; padding: 0.4rem; cursor: pointer; font-size: 0.8rem; }
+        .panel-box { background-color: var(--bg-panel); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 6px; margin-bottom: 1.5rem; }
+        .panel-box h3 { margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-muted); background-color: rgba(255,255,255,0.01); }
+
+        .dias-semana-table {
+            width: 100%;
+            margin-top: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .dias-semana-table th, .dias-semana-table td {
+            text-align: center;
+            padding: 0.5rem;
+        }
+        .dias-semana-table input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
             cursor: pointer;
         }
 
-        .client-body {
-            padding: 1.25rem;
-            display: none;
-            border-top: 1px solid var(--border-color);
-        }
+        .client-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 1rem; overflow: hidden; }
+        .client-header { background-color: var(--bg-panel-light); padding: 1rem 1.5rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .client-body { display: none; padding: 1.5rem; border-top: 1px solid var(--border-color); }
+        .client-card.open .client-body { display: block; }
 
-        .client-card.open .client-body {
-            display: block;
-        }
+        .loan-box { background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem; }
+        .loan-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .loan-summary div span { display: block; font-size: 0.8rem; color: var(--text-muted); }
+        .loan-actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 4px; }
 
-        .loan-summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1rem;
-            background: rgba(2, 6, 23, 0.5);
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-            font-size: 0.85rem;
-            border: 1px solid rgba(255,255,255,0.03);
-        }
+        .status-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; cursor: pointer; }
+        .status-dot.pendente { background-color: var(--warning); }
+        .status-dot.atrasado { background-color: var(--danger); }
+        .status-dot.pago { background-color: var(--success); }
+        .status-dot.parcial { background-color: var(--warning); border: 2px solid #fff; }
 
-        /* Tela de Login Cibernética */
-        #login-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--bg-primary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            background-image: radial-gradient(circle, rgba(0, 240, 255, 0.08) 0%, transparent 70%);
-        }
+        .history-row { display: none; background-color: rgba(0,0,0,0.3); }
 
-        .login-box {
-            background-color: var(--bg-secondary);
-            border: 1px solid var(--accent-cyan);
-            padding: 2.5rem;
-            border-radius: 8px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
-            position: relative;
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background-color: var(--bg-panel); border: 1px solid var(--border-color); padding: 2rem; border-radius: 6px; width: 100%; max-width: 450px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
 
-        .login-box::after {
-            content: '';
-            position: absolute;
-            bottom: -2px; right: -2px;
-            width: 15px; height: 15px;
-            border-bottom: 2px solid var(--accent-cyan);
-            border-right: 2px solid var(--accent-cyan);
-        }
-
-        .chart-container {
-            position: relative;
-            width: 100%;
-            height: 300px;
-            margin-top: 1rem;
-        }
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
+        .toast { background-color: var(--bg-panel-light); border-left: 4px solid var(--primary); color: var(--text-main); padding: 1rem 1.5rem; margin-top: 10px; border-radius: 4px; min-width: 250px; }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
     </style>
 </head>
 <body>
 
-    <!-- Tela de Login -->
-    <div id="login-overlay">
-        <div class="login-box">
-            <h2 style="margin-bottom: 1.5rem; text-align: center; font-family: 'Fira Code', monospace; color: var(--accent-cyan); letter-spacing: 2px;">ROMÃO_CRED //</h2>
-            <p style="color: var(--text-muted); margin-bottom: 1.5rem; text-align: center; font-size: 0.85rem; font-family: 'Fira Code', monospace;">[ AUTENTICAÇÃO REQUERIDA ]</p>
-            <div style="margin-bottom: 1rem;">
-                <input type="password" id="senha-input" placeholder="Chave de Acesso" onkeypress="if(event.key==='Enter') fazerLogin()">
-            </div>
-            <button class="btn" style="width: 100%; padding: 0.75rem;" onclick="fazerLogin()">ACESSAR SISTEMA</button>
+    <div id="login-screen">
+        <div class="login-card">
+            <h2 class="logo-metalico"><span class="colchete">[%]</span> ROMÃO</h2>
+            <div class="subtitle">Empresa Simples de Crédito</div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Usuário</label>
+                    <input type="text" id="login-user" required autocomplete="off" placeholder="Digite o usuário">
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="login-pass" required placeholder="Digite a senha">
+                </div>
+                <button type="submit" class="btn" style="width:100%; margin-top: 0.5rem;">Entrar</button>
+            </form>
         </div>
     </div>
 
-    <!-- Header -->
-    <header>
-        <div class="logo-area">
-            <h1>ROMÃO<span>_CRED</span></h1>
-        </div>
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="mudarTab(event, 'tab-dashboard')">// Dashboard</button>
-            <button class="tab-btn" onclick="mudarTab(event, 'tab-clientes')">// Clientes</button>
-            <button class="tab-btn" onclick="mudarTab(event, 'tab-cobrancas')">// Cobranças</button>
-            <button class="tab-btn" onclick="mudarTab(event, 'tab-balancete')">// Balancete</button>
-            <button class="tab-btn" onclick="mudarTab(event, 'tab-caixa')">// Caixa</button>
-            <button class="tab-btn" onclick="mudarTab(event, 'tab-perdas')">// Perdas</button>
-        </div>
-        <div>
-            <button class="btn secondary small" id="sync-btn">SYNC</button>
-        </div>
-    </header>
-
-    <main>
-        <!-- 1. DASHBOARD -->
-        <div id="tab-dashboard" class="tab-content active">
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-title">Caixa Disponível</div>
-                    <div class="kpi-value" id="kpi-caixa" style="color: var(--accent-green);">R$ 0,00</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Capital na Rua</div>
-                    <div class="kpi-value" id="kpi-capital-rua" style="color: var(--accent-cyan);">R$ 0,00</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Retorno Esperado Total</div>
-                    <div class="kpi-value" id="kpi-retorno-esperado">R$ 0,00</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Lucro Bruto Esperado</div>
-                    <div class="kpi-value" id="kpi-lucro-esperado" style="color: var(--accent-green);">R$ 0,00</div>
-                </div>
+    <div id="app-screen">
+        <header>
+            <div class="brand">
+                <h1 class="logo-metalico"><span class="colchete">[%]</span> ROMÃO</h1>
+                <span>Empresa Simples de Crédito</span>
             </div>
-
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-title">Lucro Líquido (Mês)</div>
-                    <div class="kpi-value" id="kpi-lucro-liquido-mes" style="color: var(--accent-green);">R$ 0,00</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Vencendo em 3 Dias</div>
-                    <div class="kpi-value" id="kpi-vencendo-3d" style="color: #f59e0b;">0</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Parcelas Atrasadas</div>
-                    <div class="kpi-value" id="kpi-atrasadas" style="color: var(--accent-red);">0</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Gastos do Mês</div>
-                    <div class="kpi-value" id="kpi-gastos-mes" style="color: var(--accent-red);">R$ 0,00</div>
-                </div>
+            <div class="header-actions">
+                <button class="btn secondary small" id="sync-btn">☁️ Exportar Backup</button>
+                <button class="btn danger small" id="logout-btn">Sair</button>
             </div>
+        </header>
 
-            <div class="panel-box">
-                <div class="panel-title"><span>// RENDIMENTOS EM TEMPO REAL</span></div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; text-align: center;">
-                    <div style="background: rgba(2, 6, 23, 0.5); padding: 1rem; border-radius: 4px; border: 1px solid var(--border-color);">
-                        <span style="font-size: 0.75rem; color: var(--text-muted); font-family: 'Fira Code', monospace;">HOJE</span>
-                        <div id="kpi-rendimento-hoje" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-green); margin-top: 0.25rem; font-family: 'Fira Code', monospace;">R$ 0,00</div>
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-tab="tab-dashboard">Dashboard</button>
+            <button class="tab-btn" data-tab="tab-cobrancas">Cobranças do Dia</button>
+            <button class="tab-btn" data-tab="tab-caixa">Movimentação de Caixa</button>
+            <button class="tab-btn" data-tab="tab-gastos">Meus Gastos</button>
+            <button class="tab-btn" data-tab="tab-depositos">Depósito Bancário</button>
+            <button class="tab-btn" data-tab="tab-cadastro">Cadastrar Dívida</button>
+            <button class="tab-btn" data-tab="tab-clientes" id="nav-btn-clientes">Clientes / Dívidas</button>
+            <button class="tab-btn" data-tab="tab-relatorios">Relatórios</button>
+            <button class="tab-btn" data-tab="tab-balancete">Balancete de Juros</button>
+            <button class="tab-btn" data-tab="tab-perdas">Perdas</button>
+        </nav>
+
+        <main class="content">
+            <div id="tab-dashboard" class="tab-content active">
+                <div class="grid-cards">
+                    <div class="card-kpi"><div class="label">Caixa (Saldo)</div><div class="value green" id="kpi-caixa">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Capital Puro na Rua</div><div class="value red" id="kpi-capital-rua">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Retorno Bruto Esperado</div><div class="value" id="kpi-retorno-esperado">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Lucro Projetado Pendente</div><div class="value green" id="kpi-lucro-esperado">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Vencendo em 3 dias</div><div class="value" id="kpi-vencendo-3d">0</div></div>
+                    <div class="card-kpi"><div class="label">Parcelas Atrasadas</div><div class="value red" id="kpi-atrasadas">0</div></div>
+                    <div class="card-kpi"><div class="label">Lucro Recebido (Semana)</div><div class="value green" id="kpi-lucro-semana">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Lucro Recebido (Mês)</div><div class="value green" id="kpi-lucro-mes">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Lucro Líquido (Mês, já descontando Meus Gastos)</div><div class="value" id="kpi-lucro-liquido-mes">R$ 0,00</div></div>
+                </div>
+
+                <div class="row-split">
+                    <div class="panel-box">
+                        <h3>📈 Lucro de Juros por Mês</h3>
+                        <div id="grafico-lucro-mensal" style="min-height:220px; display:flex; align-items:center; justify-content:center;"></div>
                     </div>
-                    <div style="background: rgba(2, 6, 23, 0.5); padding: 1rem; border-radius: 4px; border: 1px solid var(--border-color);">
-                        <span style="font-size: 0.75rem; color: var(--text-muted); font-family: 'Fira Code', monospace;">SEMANA</span>
-                        <div id="kpi-rendimento-semana" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-cyan); margin-top: 0.25rem; font-family: 'Fira Code', monospace;">R$ 0,00</div>
-                    </div>
-                    <div style="background: rgba(2, 6, 23, 0.5); padding: 1rem; border-radius: 4px; border: 1px solid var(--border-color);">
-                        <span style="font-size: 0.75rem; color: var(--text-muted); font-family: 'Fira Code', monospace;">MÊS</span>
-                        <div id="kpi-rendimento-mes" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-cyan); margin-top: 0.25rem; font-family: 'Fira Code', monospace;">R$ 0,00</div>
+                    <div class="panel-box">
+                        <h3>🥧 Status das Parcelas</h3>
+                        <div id="grafico-status-parcelas" style="min-height:220px; display:flex; align-items:center; justify-content:center;"></div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- 2. CLIENTES & EMPRÉSTIMOS -->
-        <div id="tab-clientes" class="tab-content">
-            <div class="panel-box">
-                <div class="panel-title"><span>// CADASTRAR NOVO CLIENTE</span></div>
-                <div class="form-grid">
-                    <input type="text" id="novo-cli-nome" placeholder="Nome Completo">
-                    <input type="text" id="novo-cli-tel" placeholder="Telefone / WhatsApp">
-                    <input type="text" id="novo-cli-cpf" placeholder="CPF / CNPJ">
-                    <input type="text" id="novo-cli-obs" placeholder="Observações (Endereço)">
+                <div class="panel-box">
+                    <h3>📊 Recebido vs. Atrasado (situação atual)</h3>
+                    <div id="grafico-recebido-atrasado" style="min-height:120px; display:flex; align-items:center; justify-content:center;"></div>
                 </div>
-                <button class="btn good" onclick="cadastrarCliente()">SALVAR CLIENTE</button>
             </div>
 
-            <div class="panel-box">
-                <div class="panel-title">
-                    <span>// BASE DE CLIENTES & CONTRATOS</span>
-                    <input type="text" id="busca-cliente" placeholder="Filtrar por nome ou CPF..." style="max-width: 250px;" oninput="renderizarTudo()">
+            <div id="tab-cobrancas" class="tab-content">
+                <div class="cobrancas-header">
+                    <span class="cobrancas-header-icon">📅</span>
+                    <h2 class="cobrancas-header-title">Cobranças do Dia</h2>
+                </div>
+                <div class="cobrancas-data-box" id="cobrancas-data-extenso">--</div>
+
+                <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem;">
+                    <button class="btn small cobrancas-view-btn active" id="btn-view-dia" onclick="setCobrancasView('dia')">Dia</button>
+                    <button class="btn small cobrancas-view-btn" id="btn-view-semana" onclick="setCobrancasView('semana')">Semana</button>
+                    <button class="btn small cobrancas-view-btn" id="btn-view-mes" onclick="setCobrancasView('mes')">Mês</button>
+                </div>
+
+                <div id="cobrancas-view-dia">
+                    <div class="grid-cards" style="margin-bottom:1.5rem;">
+                        <div class="card-kpi"><div class="label">A Receber Hoje</div><div class="value" id="kpi-receber-hoje">R$ 0,00</div></div>
+                        <div class="card-kpi"><div class="label">Total Atrasado</div><div class="value red" id="kpi-total-atrasado">R$ 0,00</div></div>
+                    </div>
+
+                    <div class="panel-box">
+                        <h3 class="cobrancas-section-title verde"><span class="dot-status verde"></span>A Receber Hoje</h3>
+                        <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Valor</th></tr></thead><tbody id="tbl-hoje-corpo"></tbody></table></div>
+                    </div>
+                    <div class="panel-box">
+                        <h3 class="cobrancas-section-title vermelho"><span class="dot-status vermelho"></span>Atrasados</h3>
+                        <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Vencimento</th><th>Valor</th><th>Dias Atraso</th></tr></thead><tbody id="tbl-atrasados-corpo"></tbody></table></div>
+                    </div>
+                </div>
+
+                <div id="cobrancas-view-semana" style="display:none;">
+                    <div class="card-kpi" style="margin-bottom:1.5rem;"><div class="label">Total a Receber na Semana</div><div class="value" id="kpi-receber-semana">R$ 0,00</div></div>
+                    <div id="cobrancas-semana-container"></div>
+                </div>
+
+                <div id="cobrancas-view-mes" style="display:none;">
+                    <div class="card-kpi" style="margin-bottom:1.5rem;"><div class="label">Total a Receber no Mês</div><div class="value" id="kpi-receber-mes">R$ 0,00</div></div>
+                    <div id="cobrancas-mes-container"></div>
+                </div>
+            </div>
+
+            <div id="tab-caixa" class="tab-content">
+                <div class="row-split">
+                    <div class="panel-box">
+                        <h3>Lançamento de Caixa</h3>
+                        <div class="form-group"><label>Valor (R$)</label><input type="number" step="0.01" id="caixa-valor" placeholder="0.00"></div>
+                        <div class="form-group"><label>Descrição</label><input type="text" id="caixa-desc" placeholder="Ex: Aporte"></div>
+                        <div style="display:flex; gap:1rem;">
+                            <button class="btn good" id="btn-injetar-caixa" style="flex:1;">💰 Injetar</button>
+                            <button class="btn danger" id="btn-retirar-caixa" style="flex:1;">💸 Retirar</button>
+                        </div>
+                    </div>
+                    <div class="panel-box">
+                        <h3>Últimas Movimentações</h3>
+                        <div class="table-responsive"><table><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead><tbody id="tbl-extrato-resumo"></tbody></table></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-gastos" class="tab-content">
+                <div class="grid-cards" style="margin-bottom:1.5rem;">
+                    <div class="card-kpi"><div class="label">Gastos no Mês Atual</div><div class="value red" id="kpi-gastos-mes">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Total Gasto (histórico)</div><div class="value red" id="kpi-gastos-total">R$ 0,00</div></div>
+                </div>
+                <div class="row-split">
+                    <div class="panel-box">
+                        <h3>Registrar Gasto</h3>
+                        <form id="form-gasto">
+                            <div class="form-group"><label>Valor (R$)</label><input type="number" step="0.01" id="gasto-valor" required placeholder="0.00"></div>
+                            <div class="form-group"><label>Data</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="gasto-data" required></div>
+                            <div class="form-group"><label>Descrição</label><input type="text" id="gasto-desc" required placeholder="Ex: Boleto da faculdade"></div>
+                            <button type="submit" class="btn danger" style="width:100%;">💸 Registrar Gasto (retira do caixa)</button>
+                        </form>
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.75rem;">Esse valor sai do caixa/capital do empréstimo na hora, igual uma retirada, mas fica registrado aqui separado, com data e descrição, e é descontado do lucro do mês nos relatórios.</div>
+                    </div>
+                    <div class="panel-box">
+                        <h3>Meus Gastos Registrados</h3>
+                        <div class="form-group inline"><input type="text" id="filtro-gasto-desc" placeholder="Filtrar por descrição"><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="filtro-gasto-data"></div>
+                        <div class="table-responsive"><table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th></th></tr></thead><tbody id="tbl-gastos-corpo"></tbody></table></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-depositos" class="tab-content">
+                <div class="row-split">
+                    <div class="panel-box">
+                        <h3>Anotar Depósito Bancário</h3>
+                        <form id="form-deposito">
+                            <div class="form-group"><label>Nome do Cliente</label><input type="text" id="dep-nome" required></div>
+                            <div class="form-group inline">
+                                <div><label>Valor (R$)</label><input type="number" step="0.01" id="dep-valor" required></div>
+                                <div><label>Data</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="dep-data" required></div>
+                            </div>
+                            <div class="form-group"><label>Observação</label><input type="text" id="dep-obs"></div>
+                            <button type="submit" class="btn good" style="width:100%;">Salvar Depósito</button>
+                        </form>
+                    </div>
+                    <div class="panel-box">
+                        <h3>Registros</h3>
+                        <div class="form-group inline"><input type="text" id="filtro-dep-nome" placeholder="Filtrar por Nome"><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="filtro-dep-data"></div>
+                        <div style="margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);" id="dep-meta-info">Total: R$ 0,00 | Qtd: 0</div>
+                        <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Data</th><th>Valor</th><th>Obs</th></tr></thead><tbody id="tbl-depositos-corpo"></tbody></table></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-cadastro" class="tab-content">
+                <div class="panel-box" style="max-width: 700px; margin: 0 auto;">
+                    <h3>Cadastrar Nova Dívida / Empréstimo</h3>
+                    <form id="form-cadastro-divida">
+                        <div class="form-group"><label>Nome do Cliente *</label><input type="text" id="cad-nome" required></div>
+                        <div class="form-group inline">
+                            <div><label>CPF/CNPJ</label><input type="text" id="cad-cpf"></div>
+                            <div><label>Telefone</label><input type="text" id="cad-tel" placeholder="(62) 99999-9999"></div>
+                        </div>
+                        <div class="form-group inline">
+                            <div><label>Valor Emprestado (Capital Puro R$) *</label><input type="number" step="0.01" id="cad-v-emprestado" required></div>
+                            <div><label>Valor Total com Juros (R$) *</label><input type="number" step="0.01" id="cad-v-total" required></div>
+                        </div>
+                        <div class="form-group inline">
+                            <div><label>Quantidade de Parcelas *</label><input type="number" id="cad-qtd-parcelas" required min="1"></div>
+                            <div><label>Intervalo Fixo (Dias) *</label><input type="number" id="cad-intervalo" value="7" required min="1"></div>
+                        </div>
+                        <div class="form-group inline">
+                            <div><label>Data de Início *</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="cad-data-inicio" required></div>
+                            <div><label>Data Final (Opcional limite)</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="cad-data-final"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Dias da Semana Permitidos para Cobrança (Selecione):</label>
+                            <table class="dias-semana-table">
+                                <thead>
+                                    <tr>
+                                        <th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sáb</th><th>Dom</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="checkbox" id="chk-seg" checked></td>
+                                        <td><input type="checkbox" id="chk-ter" checked></td>
+                                        <td><input type="checkbox" id="chk-qua" checked></td>
+                                        <td><input type="checkbox" id="chk-qui" checked></td>
+                                        <td><input type="checkbox" id="chk-sex" checked></td>
+                                        <td><input type="checkbox" id="chk-sab" checked></td>
+                                        <td><input type="checkbox" id="chk-dom"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="form-group"><label>Observações</label><textarea id="cad-obs" rows="2"></textarea></div>
+                        <button type="submit" class="btn good" style="width:100%;">Gerar Empréstimo</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="tab-clientes" class="tab-content">
+                <h2 style="margin-bottom:1rem;">Gestão de Clientes e Dívidas</h2>
+                <div class="form-group" style="max-width: 400px;">
+                    <input type="text" id="busca-cliente" placeholder="🔎 Buscar cliente pelo nome...">
+                </div>
+                <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+                    <span style="font-size:0.85rem; color:var(--text-muted);">Ordenar contratos:</span>
+                    <button class="btn small cobrancas-view-btn active" id="btn-ord-recentes" onclick="setOrdenacaoContratos('recentes')">🆕 Mais Recentes Primeiro</button>
+                    <button class="btn small cobrancas-view-btn" id="btn-ord-ativos" onclick="setOrdenacaoContratos('ativos')">🔥 Ativos Primeiro</button>
                 </div>
                 <div id="clientes-lista-container"></div>
             </div>
-        </div>
 
-        <!-- 3. COBRANÇAS & FLUXO -->
-        <div id="tab-cobrancas" class="tab-content">
-            <div class="panel-box">
-                <div class="panel-title"><span>// RECEBIMENTOS PREVISTOS PARA HOJE</span></div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>CLIENTE</th>
-                                <th>PARCELA / VALOR</th>
-                                <th>AÇÕES</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbl-hoje-corpo">
-                            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum recebimento para hoje.</td></tr>
-                        </tbody>
-                    </table>
+            <div id="tab-relatorios" class="tab-content">
+                <div class="panel-box">
+                    <h3>📜 Extrato Completo de Caixa</h3>
+                    <div class="table-responsive" style="max-height: 250px;"><table><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead><tbody id="tbl-rel-caixa"></tbody></table></div>
+                </div>
+                <div class="panel-box">
+                    <h3>💰 Histórico de Pagamentos</h3>
+                    <div class="table-responsive" style="max-height: 250px;"><table><thead><tr><th>Data</th><th>Cliente</th><th>Parcela</th><th>Valor</th><th>Obs</th></tr></thead><tbody id="tbl-rel-pagamentos"></tbody></table></div>
+                </div>
+                <div class="panel-box">
+                    <h3>⚠️ Inadimplência Geral</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parc.</th><th>Vencimento</th><th>Valor Base</th><th>Saldo</th><th>Atraso</th></tr></thead><tbody id="tbl-rel-inadimplencia"></tbody></table></div>
                 </div>
             </div>
 
-            <div class="panel-box">
-                <div class="panel-title" style="color: var(--accent-red);"><span>// ALERTA DE INADIMPLÊNCIA</span></div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>CLIENTE</th>
-                                <th>VENCIMENTO</th>
-                                <th>PARCELA</th>
-                                <th>VALOR DEVIDO</th>
-                                <th>AÇÕES</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbl-atrasados-corpo">
-                            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhuma parcela atrasada.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- 4. BALANCETE & GRÁFICOS -->
-        <div id="tab-balancete" class="tab-content">
-            <div class="panel-box">
-                <div class="panel-title"><span>// ANÁLISE GRÁFICA DE RENDIMENTOS</span></div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-                    <div>
-                        <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; text-align: center; font-family: 'Fira Code', monospace;">EVOLUÇÃO DE JUROS POR MÊS</h4>
-                        <div class="chart-container">
-                            <canvas id="chartJurosMes"></canvas>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; text-align: center; font-family: 'Fira Code', monospace;">DISTRIBUIÇÃO POR PERÍODO</h4>
-                        <div class="chart-container">
-                            <canvas id="chartRendimentosPeriodo"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="panel-box">
-                <div class="panel-title"><span>// BALANCETE DETALHADO</span></div>
+            <div id="tab-balancete" class="tab-content">
+                <h2 style="margin-bottom:1rem;">Balancete de Juros Recebidos</h2>
                 <div id="balancete-container"></div>
             </div>
-        </div>
 
-        <!-- 5. CAIXA & GASTOS -->
-        <div id="tab-caixa" class="tab-content">
-            <div class="panel-box">
-                <div class="panel-title"><span>// FLUXO DE CAIXA</span></div>
-                <div class="form-grid">
-                    <input type="number" step="0.01" id="caixa-valor" placeholder="Valor R$">
-                    <select id="caixa-tipo">
-                        <option value="injecao">Injeção de Capital (Entrada)</option>
-                        <option value="retirada">Retirada de Capital (Saída)</option>
-                    </select>
-                    <input type="text" id="caixa-obs" placeholder="Motivo / Descrição">
+            <div id="tab-perdas" class="tab-content">
+                <h2 style="margin-bottom:1rem;">Perdas</h2>
+                <div class="grid-cards" style="margin-bottom:1.5rem;">
+                    <div class="card-kpi"><div class="label">Total de Perdas (período filtrado)</div><div class="value red" id="kpi-total-perdas">R$ 0,00</div></div>
+                    <div class="card-kpi"><div class="label">Quantidade de Baixas</div><div class="value" id="kpi-qtd-perdas">0</div></div>
                 </div>
-                <button class="btn" onclick="movimentarCaixa()">EXECUTAR MOVIMENTAÇÃO</button>
-            </div>
-
-            <div class="panel-box">
-                <div class="panel-title"><span>// REGISTRAR GASTO OPERACIONAL</span></div>
-                <div class="form-grid">
-                    <input type="text" id="gasto-desc" placeholder="Descrição (ex: Aluguel)">
-                    <input type="number" step="0.01" id="gasto-valor" placeholder="Valor R$">
-                    <input type="date" id="gasto-data">
-                </div>
-                <button class="btn danger" onclick="registrarGasto()">REGISTRAR GASTO</button>
-            </div>
-
-            <div class="panel-box">
-                <div class="panel-title"><span>// EXTRATO RECENTE</span></div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>DATA</th>
-                                <th>TIPO</th>
-                                <th>DESCRIÇÃO</th>
-                                <th>VALOR</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbl-extrato-resumo">
-                            <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Nenhuma transação.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- 6. PERDAS -->
-        <div id="tab-perdas" class="tab-content">
-            <div class="panel-box">
-                <div class="panel-title" style="color: var(--accent-red);"><span>// REGISTRO DE PERDAS</span></div>
-                <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-                    <div>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); font-family: 'Fira Code', monospace;">TOTAL DE PERDAS:</span>
-                        <div id="kpi-total-perdas" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-red); font-family: 'Fira Code', monospace;">R$ 0,00</div>
+                <div class="panel-box">
+                    <h3>Filtrar por período</h3>
+                    <div class="form-group inline">
+                        <div><label>De</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="filtro-perda-ini"></div>
+                        <div><label>Até</label><input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="filtro-perda-fim"></div>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>DATA</th>
-                                <th>CLIENTE</th>
-                                <th>VALOR</th>
-                                <th>OBSERVAÇÃO</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbl-perdas-corpo">
-                            <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Nenhuma perda registrada.</td></tr>
-                        </tbody>
-                    </table>
+                <div class="panel-box">
+                    <h3>📉 Histórico de Perdas</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Data</th><th>Cliente</th><th>Valor</th><th>Observação</th></tr></thead><tbody id="tbl-perdas-corpo"></tbody></table></div>
                 </div>
             </div>
+        </main>
+    </div>
+
+    <div class="modal" id="modal-edicao">
+        <div class="modal-content">
+            <h3>Editar Valor da Parcela</h3><br>
+            <div class="form-group"><label>Novo Valor (R$)</label><input type="number" step="0.01" id="modal-parc-valor"></div>
+            <input type="hidden" id="modal-parc-cli-id"><input type="hidden" id="modal-parc-emp-id"><input type="hidden" id="modal-parc-id">
+            <div class="modal-buttons">
+                <button class="btn secondary" id="modal-btn-cancelar">Cancelar</button>
+                <button class="btn good" id="modal-btn-salvar">Salvar</button>
+            </div>
         </div>
-    </main>
+    </div>
 
-    <!-- Script de Gestão -->
+    <div id="toast-container"></div>
+
     <script>
-        const SENHA_MESTRE = "1234";
+        document.addEventListener("DOMContentLoaded", function() {
+            let state = { caixa: 0, clientes: [], transacoes: [], depositos: [], perdas: [], gastos: [] };
+            // Objeto auxiliar para lembrar quais cards de clientes estavam abertos antes de recarregar a tela
+            let openCardsState = {};
+            // Controla quais meses do Balancete de Juros estão expandidos (mostrando a lista de parcelas)
+            let openBalanceteState = {};
 
-        let state = {
-            caixa: 10000.00,
-            clientes: [],
-            gastos: [],
-            transacoes: [],
-            perdas: []
-        };
+            // ===== SUPABASE (R49): substitui o localStorage como fonte de dados =====
+            const SUPABASE_URL = 'https://aprhvjslvevqfflcjgwh.supabase.co';
+            const SUPABASE_ANON_KEY = 'sb_publishable_KXA5TLVwAS0TMJKRpaXFIA_K_ULjVL4';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const SUPABASE_ROW_ID = 'main';
 
-        let openBalanceteState = {};
-        let chartJurosInstancia = null;
-        let chartRendInstancia = null;
+            let salvamentoEmAndamento = false;
+            let salvamentoPendente = false;
 
-        function fazerLogin() {
-            const senha = document.getElementById('senha-input').value;
-            if (senha === SENHA_MESTRE) {
-                document.getElementById('login-overlay').style.display = 'none';
-                carregarDados();
+            async function carregarDados() {
+                console.log("[Romão Cred] Buscando dados no Supabase (tabela app_state, id='main')...");
+                showToast("Carregando dados da nuvem...", "info");
+
+                const { data: row, error, status } = await supabase
+                    .from('app_state')
+                    .select('data')
+                    .eq('id', SUPABASE_ROW_ID)
+                    .maybeSingle();
+
+                console.log("[Romão Cred] Resposta do Supabase:", { row, error, status });
+
+                if (error) {
+                    // Erro real de conexão, tabela inexistente, ou RLS bloqueando.
+                    console.error("[Romão Cred] ERRO ao carregar:", error);
+                    showToast("ERRO ao carregar da nuvem: " + error.message + " (veja o console - F12)", "error");
+                } else if (row && row.data) {
+                    state = row.data;
+                    if(!state.clientes) state.clientes = [];
+                    if(!state.transacoes) state.transacoes = [];
+                    if(!state.depositos) state.depositos = [];
+                    if(!state.perdas) state.perdas = [];
+                    if(!state.gastos) state.gastos = [];
+                    if(typeof state.caixa !== 'number') state.caixa = 0;
+                    console.log("[Romão Cred] Dados carregados com sucesso:", state);
+                } else {
+                    // Nenhum registro ainda existe no Supabase (primeira vez rodando o sistema):
+                    // cria o registro inicial vazio para não quebrar o upsert seguinte.
+                    console.warn("[Romão Cred] Nenhum registro encontrado. Criando registro inicial vazio.");
+                    const { error: errInicial } = await supabase.from('app_state').upsert({
+                        id: SUPABASE_ROW_ID,
+                        data: state,
+                        updated_at: new Date().toISOString()
+                    });
+                    if (errInicial) {
+                        console.error("[Romão Cred] ERRO ao criar registro inicial:", errInicial);
+                        showToast("ERRO ao criar registro inicial: " + errInicial.message, "error");
+                    }
+                }
                 renderizarTudo();
-            } else {
-                alert('Acesso negado.');
-            }
-        }
-
-        function mudarTab(event, tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-            
-            if(tabId === 'tab-balancete') {
-                setTimeout(atualizarGraficos, 100);
-            }
-        }
-
-        function salvarDados() {
-            localStorage.setItem('romao_cred_state_tron', JSON.stringify(state));
-        }
-
-        function carregarDados() {
-            const salvo = localStorage.getItem('romao_cred_state_tron');
-            if (salvo) {
-                try { state = JSON.parse(salvo); } catch(e) {}
-            }
-        }
-
-        function formatReal(valor) {
-            return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        }
-
-        function formatDateBR(dataIso) {
-            if (!dataIso) return '';
-            const partes = dataIso.split('-');
-            if (partes.length !== 3) return dataIso;
-            return `${partes[2]}/${partes[1]}/${partes[0]}`;
-        }
-
-        function cadastrarCliente() {
-            const nome = document.getElementById('novo-cli-nome').value.trim();
-            const tel = document.getElementById('novo-cli-tel').value.trim();
-            const cpf = document.getElementById('novo-cli-cpf').value.trim();
-            const obs = document.getElementById('novo-cli-obs').value.trim();
-
-            if (!nome) { alert('Informe o nome.'); return; }
-
-            state.clientes.push({
-                id: 'cli_' + Date.now(),
-                nome, telefone: tel, cpf, obs,
-                emprestimos: []
-            });
-
-            document.getElementById('novo-cli-nome').value = '';
-            document.getElementById('novo-cli-tel').value = '';
-            document.getElementById('novo-cli-cpf').value = '';
-            document.getElementById('novo-cli-obs').value = '';
-
-            salvarDados();
-            renderizarTudo();
-            alert('Cliente registrado.');
-        }
-
-        function criarEmprestimo(cliId) {
-            const principal = parseFloat(document.getElementById(`emp-val-${cliId}`).value);
-            const numParcs = parseInt(document.getElementById(`emp-parc-${cliId}`).value);
-            const taxa = parseFloat(document.getElementById(`emp-taxa-${cliId}`).value);
-            const dataInicio = document.getElementById(`emp-data-${cliId}`).value;
-
-            if (isNaN(principal) || principal <= 0 || isNaN(numParcs) || numParcs <= 0 || isNaN(taxa) || !dataInicio) {
-                alert('Preencha todos os campos do empréstimo.');
-                return;
             }
 
-            if (state.caixa < principal) {
-                alert('Caixa insuficiente.');
-                return;
-            }
+            async function salvarDados() {
+                // Renderiza imediatamente para a UI responder na hora,
+                // sem esperar a gravação na nuvem terminar.
+                renderizarTudo();
 
-            const valorTotal = principal * (1 + (taxa / 100));
-            const valorParcela = valorTotal / numParcs;
-
-            let parcelas = [];
-            let dIni = new Date(dataInicio + 'T12:00:00');
-
-            for (let i = 1; i <= numParcs; i++) {
-                dIni.setMonth(dIni.getMonth() + 1);
-                let vencIso = dIni.toISOString().split('T')[0];
-                parcelas.push({
-                    id: 'p_' + Date.now() + '_' + i,
-                    numero: i,
-                    valor: Number(valorParcela.toFixed(2)),
-                    pago: 0,
-                    dataVencimento: vencIso,
-                    historico: []
-                });
-            }
-
-            const cliente = state.clientes.find(c => c.id === cliId);
-            cliente.emprestimos.push({
-                id: 'emp_' + Date.now(),
-                principal,
-                taxaJuros: taxa,
-                dataInicio,
-                valorTotal: Number(valorTotal.toFixed(2)),
-                parcelas
-            });
-
-            state.caixa -= principal;
-            state.transacoes.unshift({
-                data: new Date().toISOString(),
-                tipo: 'retirada',
-                descricao: `Empréstimo: ${cliente.nome}`,
-                valor: principal
-            });
-
-            salvarDados();
-            renderizarTudo();
-            alert('Empréstimo criado.');
-        }
-
-        function baixarPagamento(cliId, empId, parcId) {
-            const valorPago = parseFloat(document.getElementById(`baixa-val-${parcId}`).value) || 0;
-            const juroRecebido = parseFloat(document.getElementById(`baixa-juro-${parcId}`).value) || 0;
-
-            if (valorPago <= 0) { alert('Informe o valor.'); return; }
-
-            const cliente = state.clientes.find(c => c.id === cliId);
-            const emp = cliente.emprestimos.find(e => e.id === empId);
-            const parc = emp.parcelas.find(p => p.id === parcId);
-
-            parc.pago += valorPago;
-            parc.historico.push({
-                data: new Date().toISOString().split('T')[0],
-                valor: valorPago,
-                juro: juroRecebido,
-                obs: `Parc ${parc.numero}`
-            });
-
-            state.caixa += valorPago;
-            state.transacoes.unshift({
-                data: new Date().toISOString(),
-                tipo: 'recebimento',
-                descricao: `Recebimento Parc ${parc.numero} - ${cliente.nome}`,
-                valor: valorPago
-            });
-
-            salvarDados();
-            renderizarTudo();
-            alert('Baixa efetuada.');
-        }
-
-        function movimentarCaixa() {
-            const valor = parseFloat(document.getElementById('caixa-valor').value);
-            const tipo = document.getElementById('caixa-tipo').value;
-            const obs = document.getElementById('caixa-obs').value.trim() || 'Movimentação';
-
-            if (isNaN(valor) || valor <= 0) { alert('Valor inválido.'); return; }
-            if (tipo === 'retirada' && state.caixa < valor) { alert('Saldo insuficiente.'); return; }
-
-            if (tipo === 'injecao') state.caixa += valor;
-            else state.caixa -= valor;
-
-            state.transacoes.unshift({ data: new Date().toISOString(), tipo, descricao: obs, valor });
-            document.getElementById('caixa-valor').value = '';
-            document.getElementById('caixa-obs').value = '';
-            salvarDados();
-            renderizarTudo();
-            alert('Movimentação concluída.');
-        }
-
-        function registrarGasto() {
-            const desc = document.getElementById('gasto-desc').value.trim();
-            const valor = parseFloat(document.getElementById('gasto-valor').value);
-            const data = document.getElementById('gasto-data').value;
-
-            if (!desc || isNaN(valor) || valor <= 0 || !data) { alert('Preencha os campos.'); return; }
-
-            state.gastos.push({ id: 'g_' + Date.now(), desc, valor, data });
-            document.getElementById('gasto-desc').value = '';
-            document.getElementById('gasto-valor').value = '';
-            document.getElementById('gasto-data').value = '';
-            salvarDados();
-            renderizarTudo();
-            alert('Gasto registrado.');
-        }
-
-        function toggleClienteCollapse(cliId) {
-            document.getElementById(`cli-card-${cliId}`).classList.toggle('open');
-        }
-
-        function toggleBalanceteMes(mesAno) {
-            openBalanceteState[mesAno] = !openBalanceteState[mesAno];
-            renderizarTudo();
-        }
-
-        function atualizarGraficos() {
-            let jurosPorMes = {};
-            (state.clientes || []).forEach(cli => {
-                (cli.emprestimos || []).forEach(emp => {
-                    (emp.parcelas || []).forEach(p => {
-                        (p.historico || []).forEach(h => {
-                            if (h.juro > 0 && h.data) {
-                                let m = h.data.substring(0, 7);
-                                jurosPorMes[m] = (jurosPorMes[m] || 0) + h.juro;
-                            }
-                        });
-                    });
-                });
-            });
-
-            let mesesOrdenados = Object.keys(jurosPorMes).sort();
-            let labelsMeses = mesesOrdenados.map(m => {
-                let partes = m.split('-');
-                return `${partes[1]}/${partes[0]}`;
-            });
-            let valoresJuros = mesesOrdenados.map(m => jurosPorMes[m]);
-
-            const ctx1 = document.getElementById('chartJurosMes').getContext('2d');
-            if (chartJurosInstancia) chartJurosInstancia.destroy();
-            chartJurosInstancia = new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: labelsMeses.length ? labelsMeses : ['Sem dados'],
-                    datasets: [{
-                        label: 'Juros (R$)',
-                        data: valoresJuros.length ? valoresJuros : [0],
-                        backgroundColor: '#00f0ff',
-                        borderRadius: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
-                        x: { grid: { display: false }, ticks: { color: '#64748b' } }
-                    }
+                // Evita disparar vários upserts simultâneos em sequência rápida de cliques;
+                // se já existe um salvamento em andamento, agenda um novo logo depois dele.
+                if (salvamentoEmAndamento) {
+                    salvamentoPendente = true;
+                    return;
                 }
-            });
+                salvamentoEmAndamento = true;
 
-            let hojeStr = new Date().toISOString().split('T')[0];
-            let rendHoje = 0, rendSemana = 0, rendMes = 0;
-            let dHj = new Date();
-            let inicioSemana = new Date(dHj);
-            inicioSemana.setDate(dHj.getDate() - 7);
-            let mesAtualStr = hojeStr.substring(0, 7);
+                console.log("[Romão Cred] Salvando no Supabase...", state);
 
-            (state.clientes || []).forEach(cli => {
-                (cli.emprestimos || []).forEach(emp => {
-                    (emp.parcelas || []).forEach(p => {
-                        (p.historico || []).forEach(h => {
-                            if (h.juro > 0 && h.data) {
-                                if (h.data === hojeStr) rendHoje += h.juro;
-                                if (new Date(h.data) >= inicioSemana) rendSemana += h.juro;
-                                if (h.data.startsWith(mesAtualStr)) rendMes += h.juro;
-                            }
-                        });
-                    });
-                });
-            });
+                const { error } = await supabase
+                    .from('app_state')
+                    .upsert({ id: SUPABASE_ROW_ID, data: state, updated_at: new Date().toISOString() });
 
-            const ctx2 = document.getElementById('chartRendimentosPeriodo').getContext('2d');
-            if (chartRendInstancia) chartRendInstancia.destroy();
-            chartRendInstancia = new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Hoje', 'Semana', 'Mês'],
-                    datasets: [{
-                        data: [rendHoje, rendSemana, rendMes],
-                        backgroundColor: ['#00ff66', '#00f0ff', '#2563eb'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { color: '#e2e8f0', font: { family: 'Fira Code' } } }
-                    }
+                salvamentoEmAndamento = false;
+
+                if (error) {
+                    console.error("[Romão Cred] ERRO ao salvar:", error);
+                    showToast("ERRO ao salvar na nuvem: " + error.message + " (veja o console - F12)", "error");
+                } else {
+                    console.log("[Romão Cred] Salvo com sucesso.");
                 }
-            });
-        }
 
-        function renderizarTudo() {
-            let capRua = 0, retEsp = 0, v3d = 0, parAtr = 0;
-            let recHj = 0, totAtr = 0;
-            let rendHoje = 0, rendSemana = 0, rendMes = 0;
-            let bAgr = {};
-            let htmlClis = '';
-            let htmlHj = '';
-            let htmlAtr = '';
+                if (salvamentoPendente) {
+                    salvamentoPendente = false;
+                    salvarDados();
+                }
+            }
 
-            const hojeStr = new Date().toISOString().split('T')[0];
-            const dHj = new Date();
-            const d3Dias = new Date();
-            d3Dias.setDate(dHj.getDate() + 3);
-            const inicioSemana = new Date(dHj);
-            inicioSemana.setDate(dHj.getDate() - 7);
-            const mesAtualStr = hojeStr.substring(0, 7);
+            function showToast(message, type = "info") {
+                const container = document.getElementById('toast-container');
+                if(!container) return;
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.innerText = message;
+                container.appendChild(toast);
+                setTimeout(() => { toast.remove(); }, 4000);
+            }
 
-            const termoBusca = (document.getElementById('busca-cliente')?.value || '').toLowerCase();
+            function formatReal(v) { return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+            function parseInputDate(str) { if(!str) return new Date(); const p = str.split('-'); return new Date(p[0], p[1] - 1, p[2], 12, 0, 0); }
+            function formatDateBR(ds) { if(!ds) return ''; return parseInputDate(ds).toLocaleDateString('pt-BR'); }
+            function getDiaSemanaExtenso(ds) { const d = parseInputDate(ds); return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d.getDay()]; }
+            function getDiaSemanaCompleto(d) { return ['Domingo', 'Segunda-Feira', 'Terça-Feira', 'Quarta-Feira', 'Quinta-Feira', 'Sexta-Feira', 'Sábado'][d.getDay()]; }
 
-            (state.clientes || []).forEach(cli => {
-                let saldoDevedorCliente = 0;
-                let isOpenClass = termoBusca ? 'open' : '';
-                let htmlEmps = '';
+            // ===== Calendário customizado (substitui o seletor nativo do navegador) =====
+            // Criado porque o calendário nativo (input type="date") não abre corretamente
+            // em alguns tablets/navegadores. Este calendário é 100% nosso e funciona igual
+            // em qualquer aparelho. O valor guardado no campo continua no formato yyyy-mm-dd
+            // (igual ao input type="date" original), então nada mais no sistema precisou mudar.
+            let calendarioCustomAberto = null;
 
-                (cli.emprestimos || []).forEach(emp => {
-                    let saldoEmp = 0;
-                    let htmlParcs = '';
+            function fecharCalendarioCustom() {
+                if (calendarioCustomAberto) {
+                    calendarioCustomAberto.popupEl.remove();
+                    document.removeEventListener('click', fecharCalendarioAoClicarFora, true);
+                    calendarioCustomAberto = null;
+                }
+            }
 
-                    (emp.parcelas || []).forEach(p => {
-                        let sP = p.valor - p.pago;
-                        if (sP > 0) {
-                            saldoEmp += sP;
-                            if (p.dataVencimento === hojeStr) {
-                                recHj += sP;
-                                htmlHj += `<tr><td>${cli.nome}</td><td>Parc ${p.numero}: ${formatReal(sP)}</td><td><button class="btn good small" onclick="baixarPagamento('${cli.id}', '${emp.id}', '${p.id}')">RECEBER</button></td></tr>`;
-                            }
-                            if (p.dataVencimento < hojeStr) {
-                                totAtr += sP;
-                                parAtr++;
-                                htmlAtr += `<tr><td>${cli.nome}</td><td>${formatDateBR(p.dataVencimento)}</td><td>Parc ${p.numero}</td><td style="color:var(--accent-red);">${formatReal(sP)}</td><td><button class="btn good small" onclick="baixarPagamento('${cli.id}', '${emp.id}', '${p.id}')">REGULARIZAR</button></td></tr>`;
-                            }
-                            let dVenc = new Date(p.dataVencimento);
-                            if (dVenc > new Date(hojeStr) && dVenc <= d3Dias) v3d++;
-                        }
+            function fecharCalendarioAoClicarFora(e) {
+                if (calendarioCustomAberto &&
+                    !calendarioCustomAberto.popupEl.contains(e.target) &&
+                    e.target !== calendarioCustomAberto.input) {
+                    fecharCalendarioCustom();
+                }
+            }
 
-                        (p.historico || []).forEach(h => {
-                            if (h.juro > 0 && h.data) {
-                                if (h.data === hojeStr) rendHoje += h.juro;
-                                if (new Date(h.data) >= inicioSemana) rendSemana += h.juro;
-                                if (h.data.startsWith(mesAtualStr)) rendMes += h.juro;
+            function abrirCalendarioCustom(input) {
+                if (calendarioCustomAberto && calendarioCustomAberto.input === input) return;
+                fecharCalendarioCustom();
 
-                                let mesAno = h.data.substring(0, 7);
-                                if (!bAgr[mesAno]) bAgr[mesAno] = { total: 0, itens: [] };
-                                bAgr[mesAno].total += h.juro;
-                                bAgr[mesAno].itens.push({
-                                    cliente: cli.nome,
-                                    parcela: p.numero,
-                                    vencimento: p.dataVencimento,
-                                    dataPagamento: h.data,
-                                    juro: h.juro
-                                });
-                            }
-                        });
+                const valorAtualISO = input.value;
+                let baseDate = valorAtualISO ? parseInputDate(valorAtualISO) : new Date();
+                baseDate.setHours(12, 0, 0, 0);
+                let mesExibido = baseDate.getMonth();
+                let anoExibido = baseDate.getFullYear();
 
-                        htmlParcs += `<tr>
-                            <td>${p.numero}</td>
-                            <td>${formatDateBR(p.dataVencimento)}</td>
-                            <td>${formatReal(p.valor)}</td>
-                            <td>${formatReal(p.pago)}</td>
-                            <td><strong style="color:${sP>0?'var(--accent-red)':'var(--accent-green)'}">${formatReal(sP)}</strong></td>
-                            <td>${sP<=0?'QUITADO':'PENDENTE'}</td>
-                            <td>
-                                ${sP>0 ? `<div style="display:flex; gap:4px;"><input type="number" step="0.01" id="baixa-val-${p.id}" placeholder="Valor" style="width:70px;"><input type="number" step="0.01" id="baixa-juro-${p.id}" placeholder="Juros" style="width:60px;"><button class="btn good small" onclick="baixarPagamento('${cli.id}', '${emp.id}', '${p.id}')">BAIXAR</button></div>` : '-'}
-                            </td>
-                        </tr>`;
-                    });
+                const popup = document.createElement('div');
+                popup.className = 'mini-calendario-popup';
 
-                    saldoDevedorCliente += saldoEmp;
-                    capRua += emp.principal;
-                    retEsp += emp.valorTotal;
-
-                    htmlEmps += `
-                        <div class="panel-box" style="margin-top: 1rem;">
-                            <div class="loan-summary">
-                                <div><span>Início:</span> <strong>${formatDateBR(emp.dataInicio)}</strong></div>
-                                <div><span>Principal:</span> <strong>${formatReal(emp.principal)}</strong></div>
-                                <div><span>Total c/ Juros:</span> <strong>${formatReal(emp.valorTotal)}</strong></div>
-                                <div><span>Saldo Devedor:</span> <strong style="color:${saldoEmp>0?'var(--accent-red)':'var(--accent-green)'}">${formatReal(saldoEmp)}</strong></div>
-                            </div>
-                            <div class="table-responsive">
-                                <table>
-                                    <thead><tr><th>#</th><th>Vencimento</th><th>Valor</th><th>Pago</th><th>Restante</th><th>Status</th><th>Ações</th></tr></thead>
-                                    <tbody>${htmlParcs}</tbody>
-                                </table>
-                            </div>
+                function renderizarMes() {
+                    const nomesMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+                    const primeiroDia = new Date(anoExibido, mesExibido, 1);
+                    const ultimoDia = new Date(anoExibido, mesExibido + 1, 0);
+                    const diaSemanaInicio = primeiroDia.getDay();
+                    let diasHtml = '';
+                    for (let i = 0; i < diaSemanaInicio; i++) diasHtml += `<div></div>`;
+                    for (let d = 1; d <= ultimoDia.getDate(); d++) {
+                        const dataStr = `${anoExibido}-${String(mesExibido + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        const selecionado = dataStr === valorAtualISO;
+                        diasHtml += `<div class="mini-calendario-dia${selecionado ? ' selecionado' : ''}" data-data="${dataStr}">${d}</div>`;
+                    }
+                    popup.innerHTML = `
+                        <div class="mini-calendario-header">
+                            <button type="button" class="mini-calendario-nav" data-nav="-1">‹</button>
+                            <strong>${nomesMeses[mesExibido]} ${anoExibido}</strong>
+                            <button type="button" class="mini-calendario-nav" data-nav="1">›</button>
                         </div>
+                        <div class="mini-calendario-semana"><div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div></div>
+                        <div class="mini-calendario-grid">${diasHtml}</div>
+                        <button type="button" class="mini-calendario-limpar">Limpar data</button>
+                    `;
+                    popup.querySelectorAll('.mini-calendario-nav').forEach(btn => {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            mesExibido += parseInt(btn.dataset.nav, 10);
+                            if (mesExibido < 0) { mesExibido = 11; anoExibido--; }
+                            if (mesExibido > 11) { mesExibido = 0; anoExibido++; }
+                            renderizarMes();
+                        });
+                    });
+                    popup.querySelectorAll('.mini-calendario-dia[data-data]').forEach(dia => {
+                        dia.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            input.value = dia.dataset.data;
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                            fecharCalendarioCustom();
+                        });
+                    });
+                    popup.querySelector('.mini-calendario-limpar').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        input.value = '';
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        fecharCalendarioCustom();
+                    });
+                }
+                renderizarMes();
+
+                document.body.appendChild(popup);
+                const rect = input.getBoundingClientRect();
+                popup.style.position = 'absolute';
+                let top = window.scrollY + rect.bottom + 4;
+                let left = window.scrollX + rect.left;
+                // Evita o popup sair da tela pela direita
+                const larguraPopup = 260;
+                if (left + larguraPopup > window.scrollX + window.innerWidth - 8) {
+                    left = window.scrollX + window.innerWidth - larguraPopup - 8;
+                }
+                popup.style.top = `${top}px`;
+                popup.style.left = `${left}px`;
+
+                calendarioCustomAberto = { input, popupEl: popup };
+                setTimeout(() => document.addEventListener('click', fecharCalendarioAoClicarFora, true), 0);
+            }
+
+            // Delegação de evento: funciona também nos campos de data criados dinamicamente
+            // (um por empréstimo), que são recriados a cada renderizarTudo()
+            document.addEventListener('focus', function(e) {
+                if (e.target && e.target.classList && e.target.classList.contains('campo-data-custom')) {
+                    abrirCalendarioCustom(e.target);
+                }
+            }, true);
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.classList && e.target.classList.contains('campo-data-custom')) {
+                    e.stopPropagation();
+                    abrirCalendarioCustom(e.target);
+                }
+            });
+            
+            function calcularDiasAtraso(dv) {
+                const hoje = new Date(); hoje.setHours(0,0,0,0);
+                const venc = parseInputDate(dv); venc.setHours(0,0,0,0);
+                const diff = hoje - venc;
+                return diff <= 0 ? 0 : Math.floor(diff / (1000 * 60 * 60 * 24));
+            }
+
+            // LOGIN
+            // Normaliza texto para evitar falha de login por causa de acentuação
+            // codificada de formas diferentes (ex: "ã" digitado em celular/teclados
+            // diferentes pode virar "a" + acento combinado em vez do caractere único),
+            // espaços extras no início/fim, ou diferença de maiúscula/minúscula.
+            function normalizarTexto(str) {
+                return (str || '').normalize('NFC').trim().toLowerCase();
+            }
+
+            document.getElementById('login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const userDigitado = normalizarTexto(document.getElementById('login-user').value);
+                const passDigitada = document.getElementById('login-pass').value.trim();
+                if (userDigitado === normalizarTexto("Romão") && passDigitada === "Rcompany2026@") {
+                    try {
+                        sessionStorage.setItem('romao_session', 'active');
+                    } catch(err) {
+                        showToast("Erro: o navegador bloqueou o armazenamento de sessão (sessionStorage). Abra o arquivo .html diretamente no navegador (Chrome/Edge/Firefox), não numa prévia embutida.", "error");
+                        return;
+                    }
+                    verificarSessao();
+                    showToast("Bem-vindo de volta, Romão!", "success");
+                } else {
+                    showToast("Usuário ou Senha incorretos.", "error");
+                }
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                try { sessionStorage.removeItem('romao_session'); } catch(err) {}
+                verificarSessao();
+            });
+
+            function verificarSessao() {
+                let ativo = false;
+                try {
+                    ativo = sessionStorage.getItem('romao_session') === 'active';
+                } catch(err) {
+                    showToast("Erro: este ambiente não permite sessionStorage. Baixe o arquivo e abra-o diretamente no navegador.", "error");
+                }
+                if (ativo) {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-screen').style.display = 'flex';
+                    carregarDados();
+                } else {
+                    document.getElementById('login-screen').style.display = 'flex';
+                    document.getElementById('app-screen').style.display = 'none';
+                }
+            }
+
+            // ABAS
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(this.getAttribute('data-tab')).classList.add('active');
+                });
+            });
+
+            function atualizarStatusParcela(p) {
+                if (p.pago >= (p.valor - 0.01)) p.status = 'pago';
+                else if (p.pago > 0) p.status = 'parcial';
+                else p.status = 'pendente';
+            }
+
+            function gerarDatasParcelasEstrategico(dInicio, dFinal, qtd, intervalo, diasMarcados) {
+                let datas = [];
+                let curr = parseInputDate(dInicio);
+                let limiteFinal = dFinal ? parseInputDate(dFinal) : null;
+                if (diasMarcados.length === 0) diasMarcados = [0,1,2,3,4,5,6];
+
+                while (datas.length < qtd) {
+                    if (datas.length > 0) {
+                        curr.setDate(curr.getDate() + Number(intervalo));
+                    }
+                    if (limiteFinal && curr > limiteFinal) {
+                        break;
+                    }
+                    while (!diasMarcados.includes(curr.getDay())) {
+                        curr.setDate(curr.getDate() + 1);
+                    }
+                    datas.push(`${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-${String(curr.getDate()).padStart(2, '0')}`);
+                }
+                return datas;
+            }
+
+            document.getElementById('form-cadastro-divida').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const nome = document.getElementById('cad-nome').value.trim();
+                const vEmprestado = parseFloat(document.getElementById('cad-v-emprestado').value);
+                const vTotal = parseFloat(document.getElementById('cad-v-total').value);
+                const qtd = parseInt(document.getElementById('cad-qtd-parcelas').value);
+                const dInicio = document.getElementById('cad-data-inicio').value;
+                const dFinal = document.getElementById('cad-data-final').value;
+                const intervalo = parseInt(document.getElementById('cad-intervalo').value);
+
+                let diasMarcados = [];
+                if(document.getElementById('chk-dom').checked) diasMarcados.push(0);
+                if(document.getElementById('chk-seg').checked) diasMarcados.push(1);
+                if(document.getElementById('chk-ter').checked) diasMarcados.push(2);
+                if(document.getElementById('chk-qua').checked) diasMarcados.push(3);
+                if(document.getElementById('chk-qui').checked) diasMarcados.push(4);
+                if(document.getElementById('chk-sex').checked) diasMarcados.push(5);
+                if(document.getElementById('chk-sab').checked) diasMarcados.push(6);
+
+                if (vTotal <= vEmprestado) return showToast("O Valor Total deve ser maior que o Emprestado.", "error");
+
+                const dates = gerarDatasParcelasEstrategico(dInicio, dFinal, qtd, intervalo, diasMarcados);
+                if(dates.length < qtd) {
+                    return showToast(`A data final estipulada é muito curta para gerar as ${qtd} parcelas nos dias permitidos.`, "error");
+                }
+
+                const valorParc = parseFloat((vTotal / qtd).toFixed(2));
+                const basePuroParc = parseFloat((vEmprestado / qtd).toFixed(2));
+
+                let parcelas = dates.map((dt, i) => ({
+                    id: 'par_' + Math.random().toString(36).substr(2, 9) + Date.now(),
+                    numero: i + 1,
+                    dataVencimento: dt,
+                    valor: valorParc,
+                    valorBase: valorParc,
+                    basePuro: basePuroParc,
+                    pago: 0,
+                    status: 'pendente',
+                    jurosExtras: 0,
+                    historico: []
+                }));
+
+                let novoEmp = {
+                    id: 'emp_' + Math.random().toString(36).substr(2, 9) + Date.now(),
+                    principal: vEmprestado,
+                    valorTotal: vTotal,
+                    qtdParcelas: qtd,
+                    dataInicio: dInicio,
+                    dataFinal: dates[dates.length - 1],
+                    intervaloDias: intervalo,
+                    parcelas: parcelas
+                };
+
+                let cli = state.clientes.find(c => c.nome.toLowerCase() === nome.toLowerCase());
+                if (!cli) {
+                    cli = { id: 'cli_' + Math.random().toString(36).substr(2, 9) + Date.now(), nome: nome, cpf: document.getElementById('cad-cpf').value, telefone: document.getElementById('cad-tel').value, obs: document.getElementById('cad-obs').value, emprestimos: [] };
+                    state.clientes.push(cli);
+                }
+                cli.emprestimos.push(novoEmp);
+                
+                state.caixa -= vEmprestado;
+                registrarTransacao('retirada', vEmprestado, `Empréstimo concedido a ${nome}`);
+
+                salvarDados();
+                showToast("Dívida registrada e parcelas geradas com sucesso!", "success");
+                this.reset();
+                document.getElementById('cad-intervalo').value = 7;
+                document.getElementById('nav-btn-clientes').click();
+            });
+
+            function registrarTransacao(tipo, valor, desc) {
+                state.transacoes.unshift({ tipo, valor, data: new Date().toISOString(), descricao: desc });
+            }
+
+            document.getElementById('btn-injetar-caixa').addEventListener('click', function() {
+                const val = parseFloat(document.getElementById('caixa-valor').value);
+                if(isNaN(val) || val <= 0) return showToast("Valor inválido", "error");
+                state.caixa += val;
+                registrarTransacao('injecao', val, document.getElementById('caixa-desc').value || "Injeção manual");
+                salvarDados();
+                document.getElementById('caixa-valor').value = ''; document.getElementById('caixa-desc').value = '';
+                showToast("Caixa abastecido!", "success");
+            });
+
+            document.getElementById('btn-retirar-caixa').addEventListener('click', function() {
+                const val = parseFloat(document.getElementById('caixa-valor').value);
+                if(isNaN(val) || val <= 0) return showToast("Valor inválido", "error");
+                state.caixa -= val;
+                registrarTransacao('retirada', val, document.getElementById('caixa-desc').value || "Retirada manual");
+                salvarDados();
+                document.getElementById('caixa-valor').value = ''; document.getElementById('caixa-desc').value = '';
+                showToast("Retirada efetuada!", "warning");
+            });
+
+            document.getElementById('form-deposito').addEventListener('submit', function(e) {
+                e.preventDefault();
+                state.depositos.unshift({ id: 'dep_' + Math.random().toString(36).substr(2, 9) + Date.now(), nome: document.getElementById('dep-nome').value, valor: parseFloat(document.getElementById('dep-valor').value), data: document.getElementById('dep-data').value, obs: document.getElementById('dep-obs').value });
+                salvarDados();
+                this.reset();
+                showToast("Depósito anotado!", "success");
+            });
+
+            document.getElementById('form-gasto').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const valor = parseFloat(document.getElementById('gasto-valor').value);
+                const data = document.getElementById('gasto-data').value;
+                const desc = document.getElementById('gasto-desc').value.trim();
+                if (isNaN(valor) || valor <= 0) return showToast("Valor inválido", "error");
+                if (!desc) return showToast("Descreva o gasto", "error");
+
+                // Retira do caixa igual uma retirada normal (o dinheiro do empréstimo saiu de fato),
+                // mas fica registrado separadamente na lista de Meus Gastos, com data e descrição.
+                state.caixa -= valor;
+                registrarTransacao('retirada', valor, `Gasto: ${desc}`);
+                state.gastos.unshift({ id: 'gasto_' + Math.random().toString(36).substr(2, 9) + Date.now(), valor, data, desc });
+
+                salvarDados();
+                this.reset();
+                showToast(`Gasto de ${formatReal(valor)} registrado e retirado do caixa!`, "success");
+            });
+
+            window.excluirGasto = function(gastoId) {
+                if (!confirm("Excluir esse gasto? Isso NÃO devolve o valor ao caixa automaticamente — se quiser, injete o valor de volta manualmente.")) return;
+                const idx = state.gastos.findIndex(g => g.id === gastoId);
+                if (idx === -1) return;
+                state.gastos.splice(idx, 1);
+                salvarDados();
+                showToast("Gasto removido da lista.", "warning");
+            };
+
+            document.getElementById('filtro-dep-nome').addEventListener('input', () => renderizarTudo());
+            document.getElementById('busca-cliente').addEventListener('input', () => renderizarTudo());
+            document.getElementById('filtro-dep-data').addEventListener('change', () => renderizarTudo());
+            document.getElementById('filtro-gasto-desc').addEventListener('input', () => renderizarTudo());
+            document.getElementById('filtro-gasto-data').addEventListener('change', () => renderizarTudo());
+
+            window.aplicarAbate = function(cliId, empId) {
+                const inp = document.getElementById(`abate-${empId}`);
+                let val = parseFloat(inp.value);
+                if (isNaN(val) || val <= 0) return showToast("Valor inválido", "error");
+
+                let cli = state.clientes.find(c => c.id === cliId);
+                let emp = cli.emprestimos.find(e => e.id === empId);
+                let saldoTotal = emp.parcelas.reduce((acc, p) => acc + (p.valor - p.pago), 0);
+
+                if (saldoTotal <= 0) return showToast("Dívida já quitada", "error");
+                if (val > saldoTotal) { val = saldoTotal; }
+
+                let rest = val;
+                state.caixa += val;
+                registrarTransacao('recebimento', val, `Recebimento Parcela - ${cli.nome}`);
+
+                let sorted = [...emp.parcelas].sort((a,b) => parseInputDate(a.dataVencimento) - parseInputDate(b.dataVencimento));
+                for (let p of sorted) {
+                    if (rest <= 0) break;
+                    let sP = p.valor - p.pago;
+                    if (sP > 0) {
+                        let appl = Math.min(rest, sP);
+                        p.pago = parseFloat((p.pago + appl).toFixed(2));
+                        rest = parseFloat((rest - appl).toFixed(2));
+                        p.historico.push({ valor: appl, data: new Date().toISOString().split('T')[0], obs: "Pagamento recebido" });
+                        atualizarStatusParcela(p);
+                    }
+                }
+                inp.value = '';
+                salvarDados();
+                showToast("Pagamento abatido com sucesso!", "success");
+            };
+
+            window.aplicarJurosEmp = function(cliId, empId) {
+                const taxInput = document.getElementById(`juros-taxa-${empId}`);
+                let pct = parseFloat(taxInput.value);
+                if(isNaN(pct) || pct < 0) return showToast("Digite uma taxa de juros válida.", "error");
+
+                const dataIniInput = document.getElementById(`juros-data-ini-${empId}`);
+                const dataFimInput = document.getElementById(`juros-data-fim-${empId}`);
+                const dataIniStr = dataIniInput ? dataIniInput.value : '';
+                const dataFimStr = dataFimInput ? dataFimInput.value : '';
+
+                // Se o usuário preencheu as duas datas, usamos um período manual em vez do
+                // cálculo automático até hoje. IMPORTANTE: cada parcela usa a PRÓPRIA data de
+                // vencimento até a Data Final para contar os dias de atraso — não um número de
+                // dias único aplicado igualmente a todas as parcelas. A Data Inicial NÃO filtra
+                // parcelas por vencimento (uma parcela vencida há semanas continua elegível se
+                // ainda tem saldo) — ela só marca a partir de quando você está registrando esse
+                // lançamento de juros, para referência no aviso de sucesso.
+                let periodoCustomizado = false;
+                let dataInicial = null;
+                let dataFinal = null;
+
+                if (dataIniStr && dataFimStr) {
+                    dataInicial = parseInputDate(dataIniStr);
+                    dataFinal = parseInputDate(dataFimStr);
+                    if (dataFinal <= dataInicial) {
+                        return showToast("A Data Final precisa ser depois da Data Inicial.", "error");
+                    }
+                    periodoCustomizado = true;
+                } else if (dataIniStr || dataFimStr) {
+                    return showToast("Preencha as duas datas (De / Até) ou deixe as duas em branco para usar o padrão.", "error");
+                }
+
+                let taxa = pct / 100;
+                let cli = state.clientes.find(c => c.id === cliId);
+                let emp = cli.emprestimos.find(e => e.id === empId);
+                let added = 0;
+
+                emp.parcelas.forEach(p => {
+                    let dias;
+                    if (periodoCustomizado) {
+                        const dataVenc = parseInputDate(p.dataVencimento);
+                        // Elegível se já venceu até a Data Final (não importa se venceu antes da Data Inicial)
+                        if (dataVenc > dataFinal) return;
+                        // Dias de atraso PRÓPRIOS dessa parcela: da vencimento dela até a Data Final
+                        dias = Math.floor((dataFinal - dataVenc) / (1000 * 60 * 60 * 24));
+                    } else {
+                        dias = calcularDiasAtraso(p.dataVencimento);
+                    }
+
+                    if (dias > 0 && p.pago < p.valor) {
+                        let nV = parseFloat((p.valorBase * Math.pow((1 + taxa), dias)).toFixed(2));
+                        let diff = nV - p.valor;
+                        if (diff > 0) { 
+                            added += diff; 
+                            p.valor = nV; 
+                            p.jurosExtras = parseFloat((nV - p.valorBase).toFixed(2)); 
+                            atualizarStatusParcela(p); 
+                        }
+                    }
+                });
+
+                if (added > 0) { 
+                    salvarDados(); 
+                    const msgPeriodo = periodoCustomizado ? ` (juros até ${formatDateBR(dataFimStr)})` : '';
+                    showToast(`Juros de ${pct}% aplicados com sucesso${msgPeriodo}! (+${formatReal(added)})`, "success"); 
+                } else { 
+                    showToast("Nenhuma parcela elegível para aplicação de juros nesse período.", "info"); 
+                }
+            };
+
+            // CORREÇÃO DO BUG: Event.stopPropagation() previne que o clique atinja o Header e feche/abra as coisas sozinhos
+            window.ciclarStatus = function(e, cliId, empId, parcId) {
+                if(e) e.stopPropagation(); // Trava a propagação imediatamente
+                
+                let cli = state.clientes.find(c => c.id === cliId);
+                let emp = cli.emprestimos.find(e => e.id === empId);
+                let p = emp.parcelas.find(x => x.id === parcId);
+                
+                if(p.status !== 'pago') {
+                    let diff = p.valor - p.pago;
+                    if(diff > 0) {
+                        p.pago = p.valor;
+                        state.caixa += diff;
+                        registrarTransacao('recebimento', diff, `Marcado Pago - ${cli.nome} Parc ${p.numero}`);
+                        p.historico = [{ valor: p.valor, data: new Date().toISOString().split('T')[0], obs: "Baixa manual total" }];
+                    }
+                    p.status = 'pago';
+                    showToast("Parcela marcada como paga!", "success");
+                } else {
+                    if(p.pago > 0) {
+                        state.caixa -= p.pago;
+                        registrarTransacao('retirada', p.pago, `Estorno de Parcela - ${cli.nome} Parc ${p.numero}`);
+                        p.pago = 0;
+                    }
+                    p.historico = []; 
+                    p.status = 'pendente';
+                    showToast("Pagamento estornado com sucesso!", "warning");
+                }
+                salvarDados();
+            };
+
+            window.zerarJurosParcela = function(cliId, empId, parcId) {
+                let cli = state.clientes.find(c => c.id === cliId);
+                let emp = cli.emprestimos.find(e => e.id === empId);
+                let p = emp.parcelas.find(x => x.id === parcId);
+
+                if (!p.jurosExtras || p.jurosExtras <= 0) {
+                    return showToast("Essa parcela não tem juros de atraso aplicados.", "info");
+                }
+
+                p.valor = p.valorBase;
+                p.jurosExtras = 0;
+                atualizarStatusParcela(p);
+                salvarDados();
+                showToast("Juros zerados! Parcela voltou ao valor original.", "success");
+            };
+
+            window.abrirEditarParcela = function(cliId, empId, parcId, val) {
+                document.getElementById('modal-parc-cli-id').value = cliId; document.getElementById('modal-parc-emp-id').value = empId; document.getElementById('modal-parc-id').value = parcId; document.getElementById('modal-parc-valor').value = val;
+                document.getElementById('modal-edicao').style.display = 'flex';
+            };
+
+            document.getElementById('modal-btn-cancelar').addEventListener('click', () => document.getElementById('modal-edicao').style.display = 'none');
+            document.getElementById('modal-btn-salvar').addEventListener('click', () => {
+                const cId = document.getElementById('modal-parc-cli-id').value; const eId = document.getElementById('modal-parc-emp-id').value; const pId = document.getElementById('modal-parc-id').value; const nV = parseFloat(document.getElementById('modal-parc-valor').value);
+                if(isNaN(nV) || nV <= 0) return;
+                let p = state.clientes.find(c => c.id === cId).emprestimos.find(e => e.id === eId).parcelas.find(x => x.id === pId);
+                p.valor = nV; 
+                atualizarStatusParcela(p);
+                document.getElementById('modal-edicao').style.display = 'none'; salvarDados();
+            });
+
+            window.toggleHistorico = function(id) { const el = document.getElementById(`hist-row-${id}`); el.style.display = (el.style.display === 'none'||el.style.display==='')?'table-row':'none'; };
+            
+            // Gerencia o estado individual do card para salvar se estava recolhido ou aberto
+            window.toggleClienteCollapse = function(id) { 
+                const card = document.getElementById(`cli-card-${id}`);
+                if (card.classList.contains('open')) {
+                    card.classList.remove('open');
+                    openCardsState[id] = false;
+                } else {
+                    card.classList.add('open');
+                    openCardsState[id] = true;
+                }
+            };
+
+            // ===== Gráficos do Dashboard (SVG puro, sem depender de bibliotecas externas) =====
+            function desenharGraficoBarras(containerId, dados, corBarra) {
+                const el = document.getElementById(containerId);
+                if (!el) return;
+                if (!dados.length || dados.every(d => d.valor === 0)) {
+                    el.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Sem dados suficientes ainda.</p>';
+                    return;
+                }
+                const largura = 320, altura = 200, margemBaixo = 30, margemEsq = 10;
+                const maxValor = Math.max(...dados.map(d => d.valor), 1);
+                const larguraBarra = (largura - margemEsq) / dados.length;
+                let barrasSvg = '';
+                dados.forEach((d, i) => {
+                    const alturaBarra = (d.valor / maxValor) * (altura - margemBaixo - 20);
+                    const x = margemEsq + i * larguraBarra + larguraBarra * 0.15;
+                    const wBarra = larguraBarra * 0.7;
+                    const y = altura - margemBaixo - alturaBarra;
+                    barrasSvg += `
+                        <rect x="${x}" y="${y}" width="${wBarra}" height="${alturaBarra}" fill="${d.cor || corBarra}" rx="3"></rect>
+                        <text x="${x + wBarra/2}" y="${y - 6}" text-anchor="middle" font-size="10" fill="#e0e0e0">${formatReal(d.valor).replace('R$','').trim()}</text>
+                        <text x="${x + wBarra/2}" y="${altura - 10}" text-anchor="middle" font-size="10" fill="#a0a0a0">${d.rotulo}</text>
                     `;
                 });
+                el.innerHTML = `<svg viewBox="0 0 ${largura} ${altura}" style="width:100%; max-width:360px; height:auto;">${barrasSvg}</svg>`;
+            }
 
-                const correspondeBusca = !termoBusca || cli.nome.toLowerCase().includes(termoBusca) || (cli.cpf && cli.cpf.includes(termoBusca));
-                if (correspondeBusca) {
-                    htmlClis += `
-                        <div class="client-card ${isOpenClass}" id="cli-card-${cli.id}">
-                            <div class="client-header" onclick="toggleClienteCollapse('${cli.id}')">
-                                <div>
-                                    <strong>${cli.nome}</strong>
-                                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; font-family: 'Fira Code', monospace;">
-                                        ${cli.telefone ? 'Tel: ' + cli.telefone + ' | ' : ''} Contratos: ${cli.emprestimos.length} | Devedor: <strong style="color:var(--accent-red)">${formatReal(saldoDevedorCliente)}</strong>
+            function desenharGraficoPizza(containerId, fatias) {
+                const el = document.getElementById(containerId);
+                if (!el) return;
+                const total = fatias.reduce((acc, f) => acc + f.valor, 0);
+                if (total <= 0) {
+                    el.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Nenhuma parcela cadastrada ainda.</p>';
+                    return;
+                }
+                const raio = 70, cx = 90, cy = 90;
+                let anguloAtual = -90;
+                let fatiasSvg = '';
+                fatias.forEach(f => {
+                    if (f.valor <= 0) return;
+                    const fracao = f.valor / total;
+                    const anguloFinal = anguloAtual + fracao * 360;
+                    const x1 = cx + raio * Math.cos(anguloAtual * Math.PI / 180);
+                    const y1 = cy + raio * Math.sin(anguloAtual * Math.PI / 180);
+                    const x2 = cx + raio * Math.cos(anguloFinal * Math.PI / 180);
+                    const y2 = cy + raio * Math.sin(anguloFinal * Math.PI / 180);
+                    const largeArc = (anguloFinal - anguloAtual) > 180 ? 1 : 0;
+                    fatiasSvg += `<path d="M${cx},${cy} L${x1},${y1} A${raio},${raio} 0 ${largeArc} 1 ${x2},${y2} Z" fill="${f.cor}"></path>`;
+                    anguloAtual = anguloFinal;
+                });
+                let legendaHtml = fatias.filter(f => f.valor > 0).map(f => `
+                    <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.8rem; margin-top:0.3rem;">
+                        <span style="width:10px; height:10px; border-radius:2px; background:${f.cor}; display:inline-block;"></span>
+                        ${f.rotulo}: <strong>${f.valor}</strong>
+                    </div>`).join('');
+                el.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; justify-content:center;">
+                        <svg viewBox="0 0 180 180" style="width:150px; height:150px;">${fatiasSvg}</svg>
+                        <div>${legendaHtml}</div>
+                    </div>`;
+            }
+
+            // Alterna entre as visualizações Dia / Semana / Mês na aba Cobranças
+            let cobrancasViewAtual = 'dia';
+            window.setCobrancasView = function(modo) {
+                cobrancasViewAtual = modo;
+                document.getElementById('cobrancas-view-dia').style.display = modo === 'dia' ? 'block' : 'none';
+                document.getElementById('cobrancas-view-semana').style.display = modo === 'semana' ? 'block' : 'none';
+                document.getElementById('cobrancas-view-mes').style.display = modo === 'mes' ? 'block' : 'none';
+                document.getElementById('btn-view-dia').classList.toggle('active', modo === 'dia');
+                document.getElementById('btn-view-semana').classList.toggle('active', modo === 'semana');
+                document.getElementById('btn-view-mes').classList.toggle('active', modo === 'mes');
+            };
+
+            // Alterna a ordem dos contratos dentro de cada cliente: mais recentes primeiro, ou ativos primeiro
+            let ordenacaoContratosAtual = 'recentes';
+            window.setOrdenacaoContratos = function(modo) {
+                ordenacaoContratosAtual = modo;
+                document.getElementById('btn-ord-recentes').classList.toggle('active', modo === 'recentes');
+                document.getElementById('btn-ord-ativos').classList.toggle('active', modo === 'ativos');
+                renderizarTudo();
+            };
+
+
+            window.toggleBalanceteMes = function(mesAno) {
+                const box = document.getElementById(`balancete-detalhe-${mesAno}`);
+                const seta = document.getElementById(`balancete-seta-${mesAno}`);
+                if (!box) return;
+                const abrindo = box.style.display === 'none' || box.style.display === '';
+                box.style.display = abrindo ? 'block' : 'none';
+                openBalanceteState[mesAno] = abrindo;
+                if (seta) seta.innerText = abrindo ? '▲' : '▼';
+            };
+            
+            window.registrarPerdaEmp = function(cliId, empId) {
+                let cli = state.clientes.find(c => c.id === cliId);
+                let emp = cli.emprestimos.find(e => e.id === empId);
+                let saldoAtual = emp.parcelas.reduce((acc, p) => acc + (p.valor - p.pago), 0);
+                saldoAtual = parseFloat(saldoAtual.toFixed(2));
+
+                if (saldoAtual <= 0) return showToast("Esse contrato não tem saldo em aberto para dar baixa como perda.", "info");
+
+                const dataInp = document.getElementById(`perda-data-${empId}`);
+                const obsInp = document.getElementById(`perda-obs-${empId}`);
+                const dataPerda = (dataInp && dataInp.value) ? dataInp.value : new Date().toISOString().split('T')[0];
+                const obs = (obsInp && obsInp.value.trim()) ? obsInp.value.trim() : '';
+
+                if (!confirm(`Confirma dar baixa de ${formatReal(saldoAtual)} como PERDA (dívida incobrável) para ${cli.nome}?\n\nEsse valor NÃO entra no caixa e some do saldo devedor/atrasados a partir de agora.`)) return;
+
+                // Fecha todas as parcelas em aberto marcando como perda (não conta como recebimento nem lucro)
+                emp.parcelas.forEach(p => {
+                    let sP = parseFloat((p.valor - p.pago).toFixed(2));
+                    if (sP > 0) {
+                        p.pago = p.valor;
+                        p.status = 'pago';
+                        p.perda = true;
+                        p.historico.push({ valor: sP, data: dataPerda, obs: obs ? `Baixa por perda: ${obs}` : 'Baixa por perda', tipo: 'perda' });
+                    }
+                });
+
+                state.perdas.push({
+                    id: 'perda_' + Math.random().toString(36).substr(2, 9) + Date.now(),
+                    clienteId: cli.id,
+                    clienteNome: cli.nome,
+                    emprestimoId: emp.id,
+                    valor: saldoAtual,
+                    data: dataPerda,
+                    obs: obs
+                });
+
+                if (dataInp) dataInp.value = '';
+                if (obsInp) obsInp.value = '';
+                salvarDados();
+                showToast(`Baixa de ${formatReal(saldoAtual)} registrada como perda.`, "success");
+            };
+
+            window.excluirEmprestimo = function(cId, eId) {
+                if(!confirm("Remover contrato permanentemente?")) return;
+                let cli = state.clientes.find(c => c.id === cId);
+                let idx = cli.emprestimos.findIndex(e => e.id === eId);
+                cli.emprestimos.splice(idx,1); 
+                salvarDados();
+            };
+
+            window.excluirCliente = function(e, cId) {
+                if(e) e.stopPropagation(); 
+                if(!confirm("Excluir cliente e todo histórico dele?")) return;
+                let idx = state.clientes.findIndex(c => c.id === cId);
+                state.clientes.splice(idx,1); 
+                salvarDados();
+            };
+
+            window.editarNomeCliente = function(e, cId) {
+                if (e) e.stopPropagation();
+                let cli = state.clientes.find(c => c.id === cId);
+                if (!cli) return;
+                const novoNome = prompt("Editar nome do cliente:", cli.nome);
+                if (novoNome === null) return; // cancelou
+                const nomeLimpo = novoNome.trim();
+                if (!nomeLimpo) return showToast("O nome não pode ficar em branco.", "error");
+                cli.nome = nomeLimpo;
+                salvarDados();
+                showToast("Nome do cliente atualizado!", "success");
+            };
+
+            function renderizarTudo() {
+                const hj = new Date().toISOString().split('T')[0];
+                let capRua = 0, retEsp = 0, v3d = 0, parAtr = 0, lucSem = 0, lucMes = 0, recHj = 0, totAtr = 0;
+                let contParcPagas = 0, contParcPendentes = 0, contParcAtrasadas = 0;
+                let htmlClis = '', htmlHj = '', htmlAtr = '', htmlInad = '', bAgr = {};
+                
+                const dHj = new Date(), d7 = new Date(); d7.setDate(dHj.getDate()-7); 
+                const initM = new Date(dHj.getFullYear(), dHj.getMonth(), 1);
+
+                const dataExtensoEl = document.getElementById('cobrancas-data-extenso');
+                if (dataExtensoEl) {
+                    const diaSemanaCompleto = getDiaSemanaCompleto(dHj);
+                    const dataFormatada = dHj.toLocaleDateString('pt-BR');
+                    dataExtensoEl.innerText = `${diaSemanaCompleto}, ${dataFormatada}`;
+                }
+
+                // Ordena os clientes A-Z pelo nome (não altera a ordem original salva nos dados,
+                // só a ordem em que aparecem na tela).
+                const clientesOrdenados = [...(state.clientes || [])].sort((a, b) =>
+                    a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
+                );
+
+                // Filtro de busca por nome (aba Clientes/Dívidas). Não afeta os cálculos de KPI,
+                // só decide quais cards aparecem na lista.
+                const buscaInput = document.getElementById('busca-cliente');
+                const termoBusca = buscaInput ? buscaInput.value.trim().toLowerCase() : '';
+
+                clientesOrdenados.forEach(cli => {
+                    let htmlEmps = '';
+                    let saldoDevedorCliente = 0;
+                    
+                    // CORREÇÃO: por padrão, se o cliente ainda não tem estado registrado
+                    // (ex: primeira renderização, ou cliente novo), o card começa FECHADO.
+                    // Antes estava "true" (aberto), o que fazia parecer que o sistema
+                    // "abria tudo sozinho" a cada atualização/render.
+                    if(openCardsState[cli.id] === undefined) openCardsState[cli.id] = false;
+                    let isOpenClass = openCardsState[cli.id] ? 'open' : '';
+
+                    // Ordena os contratos do cliente: mais recentes primeiro (por data de início),
+                    // ou contratos ainda ativos (com saldo em aberto) primeiro
+                    let listaEmprestimosOrdenada = [...(cli.emprestimos || [])];
+                    function saldoDevedorEmprestimo(e) {
+                        return (e.parcelas || []).reduce((acc, p) => acc + (p.valor - p.pago), 0);
+                    }
+                    if (ordenacaoContratosAtual === 'ativos') {
+                        listaEmprestimosOrdenada.sort((a, b) => {
+                            const ativoA = saldoDevedorEmprestimo(a) > 0.01;
+                            const ativoB = saldoDevedorEmprestimo(b) > 0.01;
+                            if (ativoA !== ativoB) return ativoA ? -1 : 1;
+                            return parseInputDate(b.dataInicio) - parseInputDate(a.dataInicio);
+                        });
+                    } else {
+                        listaEmprestimosOrdenada.sort((a, b) => parseInputDate(b.dataInicio) - parseInputDate(a.dataInicio));
+                    }
+
+                    listaEmprestimosOrdenada.forEach(emp => {
+                        let tP = 0, tS = 0, tTotalAtual = 0, tJurosAcumulados = 0;
+                        let htmlParcs = '';
+                        
+                        (emp.parcelas || []).forEach(p => {
+                            let sP = p.valor - p.pago; 
+                            tP += p.pago; 
+                            tS += sP;
+                            tTotalAtual += p.valor;
+                            tJurosAcumulados += (p.jurosExtras || 0);
+                            
+                            if(p.pago < p.basePuro) {
+                                capRua += (p.basePuro - p.pago);
+                            }
+                            retEsp += sP;
+                            
+                            let dAtr = calcularDiasAtraso(p.dataVencimento);
+
+                            if(sP > 0) {
+                                if(dAtr > 0) {
+                                    parAtr++; totAtr += sP;
+                                    contParcAtrasadas++;
+                                    htmlAtr += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td>${formatDateBR(p.dataVencimento)}</td><td style="color:#ff5252">${formatReal(sP)}</td><td>${dAtr} dias</td></tr>`;
+                                    htmlInad += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td>${formatDateBR(p.dataVencimento)}</td><td>${formatReal(p.valorBase)}</td><td>${formatReal(sP)}</td><td>${dAtr}</td></tr>`;
+                                } else {
+                                    contParcPendentes++;
+                                    if(p.dataVencimento === hj) { recHj += sP; htmlHj += `<tr><td>${cli.nome}</td><td>${p.numero}</td><td style="color:#69f0ae">${formatReal(sP)}</td></tr>`; }
+                                    if(dAtr === 0 && parseInputDate(p.dataVencimento) <= new Date(dHj.getTime() + 3*24*60*60*1000)) v3d++;
+                                }
+                            } else {
+                                contParcPagas++;
+                            }
+
+                            // Calcula o lucro (juros) de cada pagamento em ordem cronológica, acumulando
+                            // corretamente o quanto já havia sido pago antes de cada registro do histórico.
+                            // O lucro é atribuído ao mês/data de VENCIMENTO da parcela, não à data em que
+                            // o pagamento foi lançado no sistema — isso evita que lançamentos feitos hoje
+                            // para parcelas antigas "empurrem" o lucro para o mês atual.
+                            let historicoOrdenado = [...(p.historico || [])].sort((a,b) => parseInputDate(a.data) - parseInputDate(b.data));
+                            let acumuladoAntes = 0;
+                            historicoOrdenado.forEach(h => {
+                                let acumuladoDepois = parseFloat((acumuladoAntes + h.valor).toFixed(2));
+
+                                let lucroNessePagamento = 0;
+                                if (acumuladoDepois > p.basePuro) {
+                                    let inicioDoLucro = Math.max(acumuladoAntes, p.basePuro);
+                                    lucroNessePagamento = parseFloat((acumuladoDepois - inicioDoLucro).toFixed(2));
+                                }
+                                acumuladoAntes = acumuladoDepois;
+
+                                if(lucroNessePagamento > 0 && h.tipo !== 'perda') {
+                                    let dRef = parseInputDate(p.dataVencimento);
+                                    if(dRef >= d7) lucSem += lucroNessePagamento; 
+                                    if(dRef >= initM) lucMes += lucroNessePagamento;
+                                    
+                                    let mesAno = p.dataVencimento.substring(0,7);
+                                    if(!bAgr[mesAno]) bAgr[mesAno] = { total: 0, itens: [] };
+                                    bAgr[mesAno].total += lucroNessePagamento;
+                                    bAgr[mesAno].itens.push({ cliente: cli.nome, parcela: p.numero, vencimento: p.dataVencimento, dataPagamento: h.data, juro: lucroNessePagamento });
+                                }
+                            });
+
+                            let hHtml = (p.historico || []).map(h => `<div>• Recebido ${formatReal(h.valor)} em ${formatDateBR(h.data)}</div>`).join('') || '<div>Sem registros de pagamento.</div>';
+                            htmlParcs += `
+                                <tr>
+                                    <td>${p.numero}</td><td>${formatDateBR(p.dataVencimento)} <small>(${getDiaSemanaExtenso(p.dataVencimento)})</small></td><td>${formatReal(p.valor)}</td><td>${formatReal(p.pago)}</td><td style="color:${sP>0?'#ff5252':'#69f0ae'}">${formatReal(sP)}</td>
+                                    <td><span class="status-dot ${p.status} ${dAtr>0&&p.pago<p.valor?'atrasado':''}" onclick="ciclarStatus(event, '${cli.id}', '${emp.id}', '${p.id}')"></span></td>
+                                    <td><button class="btn secondary small" style="padding:2px 6px;" onclick="abrirEditarParcela('${cli.id}','${emp.id}','${p.id}', ${p.valor})">✏️</button> <button class="btn secondary small" style="padding:2px 6px;" onclick="toggleHistorico('${p.id}')">📜</button>${(p.jurosExtras && p.jurosExtras > 0) ? ` <button class="btn danger small" style="padding:2px 6px;" onclick="zerarJurosParcela('${cli.id}','${emp.id}','${p.id}')" title="Zerar juros de atraso (volta para ${formatReal(p.valorBase)})">♻️ Zerar Juros</button>` : ''}</td>
+                                </tr>
+                                <tr class="history-row" id="hist-row-${p.id}"><td colspan="7">${hHtml}</td></tr>`;
+                        });
+
+                        saldoDevedorCliente += tS;
+
+                        htmlEmps += `
+                            <div class="loan-box">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                                    <h4 style="color:var(--text-muted)">Contrato: de ${formatDateBR(emp.dataInicio)} até ${formatDateBR(emp.dataFinal)}</h4>
+                                    <button class="btn danger small" onclick="excluirEmprestimo('${cli.id}', '${emp.id}')">🗑 Remover Contrato</button>
+                                </div>
+                                <div class="loan-summary">
+                                    <div><span>Total (c/ Juros)</span><strong>${formatReal(tTotalAtual)}</strong></div>
+                                    <div><span>Pago</span><strong style="color:#69f0ae">${formatReal(tP)}</strong></div>
+                                    <div><span>Saldo Devedor</span><strong style="color:${tS>0?'#ff5252':'#69f0ae'}">${formatReal(tS)}</strong></div>
+                                    <div><span>Juros Acumulados</span><strong>${formatReal(tJurosAcumulados)}</strong></div>
+                                    <div><span>Lucro Esperado</span><strong style="color:#f9a825">${formatReal(tTotalAtual - emp.principal)}</strong></div>
+                                    <div><span>Valor Emprestado</span><strong>${formatReal(emp.principal)}</strong></div>
+                                </div>
+                                <div class="loan-actions">
+                                    <input type="number" step="0.01" id="abate-${emp.id}" style="width:110px; padding:0.4rem;" placeholder="0.00">
+                                    <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                                        <label style="margin:0; font-size:0.7rem;">Data do pagamento</label>
+                                        <input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="abate-data-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                    </div>
+                                    <button class="btn good small" onclick="aplicarAbate('${cli.id}', '${emp.id}')">💰 Receber / Abater</button>
+                                    
+                                    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem; margin-left:auto; border-left:1px solid var(--border-color); padding-left:1rem;">
+                                        <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                                            <label style="margin:0; font-size:0.7rem;">De</label>
+                                            <input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="juros-data-ini-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                        </div>
+                                        <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                                            <label style="margin:0; font-size:0.7rem;">Até</label>
+                                            <input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="juros-data-fim-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                        </div>
+                                        <input type="number" step="0.1" id="juros-taxa-${emp.id}" value="3" style="width:70px; padding:0.4rem; text-align:center;" placeholder="%">
+                                        <label style="margin:0; font-size:0.85rem;">%</label>
+                                        <button class="btn danger small" onclick="aplicarJurosEmp('${cli.id}', '${emp.id}')">⚡ Aplicar Juros</button>
                                     </div>
                                 </div>
-                                <span style="font-size: 0.75rem; color: var(--accent-cyan);">[+]</span>
-                            </div>
-                            <div class="client-body">
-                                <div class="form-grid" style="margin-bottom: 1rem;">
-                                    <input type="number" step="0.01" id="emp-val-${cli.id}" placeholder="Capital R$">
-                                    <input type="number" id="emp-parc-${cli.id}" placeholder="Qtd Parcelas">
-                                    <input type="number" step="0.1" id="emp-taxa-${cli.id}" placeholder="Taxa Juros %">
-                                    <input type="date" id="emp-data-${cli.id}">
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem;">Deixe "De" e "Até" em branco para usar o comportamento padrão (vencimento até hoje). Preenchendo os dois, o "Até" define até quando contar os juros — toda parcela já vencida até essa data (mesmo vencida há semanas) entra no cálculo, usando a própria data de vencimento dela. O "De" é só uma referência informativa desse lançamento.</div>
+                                <div class="loan-actions" style="background:rgba(255,82,82,0.06); border:1px solid rgba(255,82,82,0.25);">
+                                    <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                                        <label style="margin:0; font-size:0.7rem;">Data da perda</label>
+                                        <input type="text" readonly class="campo-data-custom" placeholder="Toque para escolher" id="perda-data-${emp.id}" style="padding:0.4rem; font-size:0.85rem;">
+                                    </div>
+                                    <input type="text" id="perda-obs-${emp.id}" placeholder="Observação (opcional)" style="flex:1; min-width:150px; padding:0.4rem;">
+                                    <button class="btn danger small" onclick="registrarPerdaEmp('${cli.id}', '${emp.id}')">📉 Dar Baixa (Perda)</button>
                                 </div>
-                                <button class="btn" onclick="criarEmprestimo('${cli.id}')">NOVO EMPRÉSTIMO</button>
-                                ${htmlEmps}
-                            </div>
-                        </div>
-                    `;
-                }
-            });
+                                <div class="table-responsive"><table><thead><tr><th>#</th><th>Vencimento</th><th>Valor Atual</th><th>Pago</th><th>Saldo</th><th>St</th><th>Ações</th></tr></thead><tbody>${htmlParcs}</tbody></table></div>
+                            </div>`;
+                    });
 
-            document.getElementById('kpi-caixa').innerText = formatReal(state.caixa);
-            document.getElementById('kpi-capital-rua').innerText = formatReal(capRua);
-            document.getElementById('kpi-retorno-esperado').innerText = formatReal(retEsp);
-            document.getElementById('kpi-lucro-esperado').innerText = formatReal(retEsp - capRua);
-            document.getElementById('kpi-vencendo-3d').innerText = v3d;
-            document.getElementById('kpi-atrasadas').innerText = parAtr;
-            
-            document.getElementById('kpi-rendimento-hoje').innerText = formatReal(rendHoje);
-            document.getElementById('kpi-rendimento-semana').innerText = formatReal(rendSemana);
-            document.getElementById('kpi-rendimento-mes').innerText = formatReal(rendMes);
-
-            let gastosMes = 0;
-            (state.gastos || []).forEach(g => {
-                if (g.data && g.data.startsWith(mesAtualStr)) gastosMes += g.valor;
-            });
-            document.getElementById('kpi-gastos-mes').innerText = formatReal(gastosMes);
-            let lucroLiquidoMes = rendMes - gastosMes;
-            const kpiLiqEl = document.getElementById('kpi-lucro-liquido-mes');
-            if (kpiLiqEl) {
-                kpiLiqEl.innerText = formatReal(lucroLiquidoMes);
-                kpiLiqEl.style.color = lucroLiquidoMes >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-            }
-
-            document.getElementById('tbl-hoje-corpo').innerHTML = htmlHj || '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum recebimento previsto.</td></tr>';
-            document.getElementById('tbl-atrasados-corpo').innerHTML = htmlAtr || '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhuma parcela atrasada.</td></tr>';
-            document.getElementById('clientes-lista-container').innerHTML = htmlClis || '<div style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum cliente cadastrado.</div>';
-
-            let htmlExt = '';
-            (state.transacoes || []).slice(0, 10).forEach(t => {
-                htmlExt += `<tr><td>${formatDateBR(t.data.split('T')[0])}</td><td>${t.tipo.toUpperCase()}</td><td>${t.descricao}</td><td style="color:${t.tipo==='recebimento'||t.tipo==='injecao'?'var(--accent-green)':'var(--accent-red)'}">${formatReal(t.valor)}</td></tr>`;
-            });
-            document.getElementById('tbl-extrato-resumo').innerHTML = htmlExt || '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Nenhuma transação.</td></tr>';
-
-            let htmlBalancete = '';
-            let mesesOrdenados = Object.keys(bAgr).sort().reverse();
-            if (mesesOrdenados.length === 0) {
-                htmlBalancete = '<div style="text-align: center; color: var(--text-muted); padding: 1rem;">Nenhum juros recebido registrado.</div>';
-            } else {
-                mesesOrdenados.forEach(mesAno => {
-                    let info = bAgr[mesAno];
-                    let partes = mesAno.split('-');
-                    let nomeMes = new Date(partes[0], partes[1] - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-                    let aberto = !!openBalanceteState[mesAno];
-                    let itensHtml = info.itens.map(it => `<tr><td>${it.cliente}</td><td>Parc ${it.parcela}</td><td>${formatDateBR(it.vencimento)}</td><td>${formatDateBR(it.dataPagamento)}</td><td style="color:var(--accent-green);">${formatReal(it.juro)}</td></tr>`).join('');
-                    
-                    htmlBalancete += `
-                        <div class="panel-box" style="margin-bottom: 1rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleBalanceteMes('${mesAno}')">
-                                <div>
-                                    <strong style="font-size: 0.95rem; text-transform: uppercase; font-family: 'Fira Code', monospace; color: var(--accent-cyan);">${nomeMes}</strong>
-                                    <div style="font-size: 0.75rem; color: var(--text-muted); font-family: 'Fira Code', monospace;">Total Juros: <strong style="color: var(--accent-green);">${formatReal(info.total)}</strong> (${info.itens.length} entradas)</div>
+                    // Só adiciona o card na lista visível se o nome bater com a busca
+                    // (ou se não houver busca digitada). Os KPIs acima já foram computados
+                    // com TODOS os clientes, independente do filtro.
+                    if (!termoBusca || cli.nome.toLowerCase().includes(termoBusca)) {
+                        const qtdEmp = (cli.emprestimos || []).length;
+                        htmlClis += `
+                            <div class="client-card ${isOpenClass}" id="cli-card-${cli.id}">
+                                <div class="client-header" onclick="toggleClienteCollapse('${cli.id}')">
+                                    <div>
+                                        <strong style="font-size:1.1rem;">${cli.nome}</strong> <button class="btn secondary small" style="padding:1px 6px; font-size:0.75rem;" onclick="editarNomeCliente(event, '${cli.id}')" title="Editar nome">✏️</button> <span style="font-size:0.8rem; color:var(--text-muted); margin-left:10px;">${cli.telefone||''}</span>
+                                        <div style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">${qtdEmp} empréstimo(s)</div>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:1.5rem;">
+                                        <div style="text-align:right;">
+                                            <div style="font-size:0.8rem; color:var(--text-muted);">Saldo devedor</div>
+                                            <strong style="font-size:1.1rem; color:${saldoDevedorCliente>0?'#ff5252':'#69f0ae'}">${formatReal(saldoDevedorCliente)}</strong>
+                                        </div>
+                                        <button class="btn danger small" onclick="excluirCliente(event, '${cli.id}')">🗑 Excluir Cliente</button>
+                                    </div>
                                 </div>
-                                <span style="font-family: 'Fira Code', monospace; color: var(--accent-cyan);">${aberto ? '[-]' : '[+]'}</span>
-                            </div>
-                            <div style="display: ${aberto ? 'block' : 'none'}; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                                <div class="table-responsive">
-                                    <table>
-                                        <thead><tr><th>Cliente</th><th>Parcela</th><th>Vencimento</th><th>Pagamento</th><th>Juros</th></tr></thead>
-                                        <tbody>${itensHtml}</tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                                <div class="client-body">${htmlEmps || '<p style="color:var(--text-muted)">Nenhum contrato ativo para este cliente.</p>'}</div>
+                            </div>`;
+                    }
                 });
-            }
-            document.getElementById('balancete-container').innerHTML = htmlBalancete;
-            atualizarGraficos();
-        }
 
-        document.getElementById('sync-btn').addEventListener('click', () => {
-            salvarDados();
-            alert('Sincronizado.');
+                document.getElementById('kpi-caixa').innerText = formatReal(state.caixa || 0);
+                document.getElementById('kpi-capital-rua').innerText = formatReal(capRua);
+                document.getElementById('kpi-retorno-esperado').innerText = formatReal(retEsp);
+                document.getElementById('kpi-lucro-esperado').innerText = formatReal(Math.max(0, retEsp - capRua));
+                document.getElementById('kpi-vencendo-3d').innerText = v3d; 
+                document.getElementById('kpi-atrasadas').innerText = parAtr;
+                document.getElementById('kpi-lucro-semana').innerText = formatReal(lucSem); 
+                document.getElementById('kpi-lucro-mes').innerText = formatReal(lucMes);
+                document.getElementById('kpi-receber-hoje').innerText = formatReal(recHj); 
+                document.getElementById('kpi-total-atrasado').innerText = formatReal(totAtr);
+                
+                document.getElementById('tbl-hoje-corpo').innerHTML = htmlHj || '<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Nada a receber hoje.</td></tr>';
+                document.getElementById('tbl-atrasados-corpo').innerHTML = htmlAtr || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Nenhum atraso pendente.</td></tr>';
+                document.getElementById('clientes-lista-container').innerHTML = htmlClis || (
+                    termoBusca
+                        ? '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nenhum cliente encontrado para essa busca.</p>'
+                        : '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nenhum cliente cadastrado.</p>'
+                );
+
+                let hEx = ''; 
+                (state.transacoes || []).slice(0, 6).forEach(t => { 
+                    let cl = t.tipo==='injecao'||t.tipo==='recebimento'?'#69f0ae':'#ff5252'; 
+                    hEx += `<tr><td>${new Date(t.data).toLocaleDateString()}</td><td><span style="color:${cl}">${t.tipo}</span></td><td>${t.descricao}</td><td style="color:${cl}">${formatReal(t.valor)}</td></tr>`; 
+                });
+                document.getElementById('tbl-extrato-resumo').innerHTML = hEx || '<tr><td colspan="4" style="text-align:center;">Sem movimentos no caixa.</td></tr>';
+
+                let hDep = ''; 
+                const fN = document.getElementById('filtro-dep-nome').value.toLowerCase(); 
+                const fD = document.getElementById('filtro-dep-data').value; 
+                let tDep = 0, cDep = 0;
+                (state.depositos || []).forEach(d => { 
+                    if(d.nome.toLowerCase().includes(fN) && (!fD || d.data === fD)) { 
+                        tDep += d.valor; cDep++; 
+                        hDep += `<tr><td>${d.nome}</td><td>${formatDateBR(d.data)}</td><td>${formatReal(d.valor)}</td><td>${d.obs||''}</td></tr>`; 
+                    } 
+                });
+                document.getElementById('tbl-depositos-corpo').innerHTML = hDep || '<tr><td colspan="4" style="text-align:center;">Nenhum depósito bancário encontrado.</td></tr>';
+                document.getElementById('dep-meta-info').innerText = `Total: ${formatReal(tDep)} | Qtd: ${cDep}`;
+
+                let hRC = ''; (state.transacoes || []).forEach(t => { 
+                    let cl = t.tipo==='injecao'||t.tipo==='recebimento'?'#69f0ae':'#ff5252'; 
+                    hRC += `<tr><td>${new Date(t.data).toLocaleString()}</td><td><span style="color:${cl}">${t.tipo}</span></td><td>${t.descricao}</td><td style="color:${cl}">${formatReal(t.valor)}</td></tr>`; 
+                });
+                document.getElementById('tbl-rel-caixa').innerHTML = hRC || '<tr><td colspan="4">Sem dados históricos.</td></tr>';
+
+                let hRP = ''; 
+                (state.clientes || []).forEach(c => (c.emprestimos || []).forEach(e => (e.parcelas || []).forEach(p => (p.historico || []).forEach(h => { 
+                    if (h.tipo === 'perda') return;
+                    hRP += `<tr><td>${formatDateBR(h.data)}</td><td>${c.nome}</td><td>Parc. ${p.numero}</td><td>${formatReal(h.valor)}</td><td>${h.obs}</td></tr>`; 
+                }))));
+                document.getElementById('tbl-rel-pagamentos').innerHTML = hRP || '<tr><td colspan="5">Nenhum pagamento registrado ainda.</td></tr>';
+                document.getElementById('tbl-rel-inadimplencia').innerHTML = htmlInad || '<tr><td colspan="6" style="text-align:center;">Nenhum inadimplente.</td></tr>';
+
+                let hBal = ''; 
+                Object.keys(bAgr).sort((a,b)=>b.localeCompare(a)).forEach(m => {
+                    let sub = bAgr[m].itens.map(i => `<tr><td>${i.cliente}</td><td>Parcela ${i.parcela}</td><td>Venc. ${formatDateBR(i.vencimento)}</td><td>Pago em ${formatDateBR(i.dataPagamento)}</td><td style="color:#69f0ae">+ ${formatReal(i.juro)}</td></tr>`).join('');
+                    const aberto = openBalanceteState[m] === true;
+                    const seta = aberto ? '▲' : '▼';
+                    hBal += `<div class="panel-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleBalanceteMes('${m}')">
+                            <h3 style="border:none; margin:0; padding:0;">Mês: ${m.split('-')[1]}/${m.split('-')[0]}</h3>
+                            <div style="display:flex; align-items:center; gap:1rem;">
+                                <strong style="color:#69f0ae">Lucro Total: ${formatReal(bAgr[m].total)}</strong>
+                                <span id="balancete-seta-${m}" style="font-size:1rem; color:var(--text-muted);">${seta}</span>
+                            </div>
+                        </div>
+                        <div id="balancete-detalhe-${m}" style="display:${aberto ? 'block' : 'none'}; margin-top:1rem;">
+                            <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Vencimento</th><th>Pagamento</th><th>Lucro</th></tr></thead><tbody>${sub}</tbody></table></div>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('balancete-container').innerHTML = hBal || '<p style="color:var(--text-muted)">Nenhum lucro de juros recebido no período.</p>';
+
+                // ===== Gráficos do Dashboard =====
+                // Lucro de Juros por Mês (últimos 6 meses com dados, do mais antigo pro mais recente)
+                const mesesOrdenados = Object.keys(bAgr).sort();
+                const ultimosMeses = mesesOrdenados.slice(-6);
+                const dadosGraficoLucro = ultimosMeses.map(m => ({
+                    rotulo: `${m.split('-')[1]}/${m.split('-')[0].slice(2)}`,
+                    valor: bAgr[m].total
+                }));
+                desenharGraficoBarras('grafico-lucro-mensal', dadosGraficoLucro, '#69f0ae');
+
+                // Status das parcelas (portfólio inteiro)
+                desenharGraficoPizza('grafico-status-parcelas', [
+                    { rotulo: 'Pagas', valor: contParcPagas, cor: '#69f0ae' },
+                    { rotulo: 'Em dia (pendentes)', valor: contParcPendentes, cor: '#f9a825' },
+                    { rotulo: 'Atrasadas', valor: contParcAtrasadas, cor: '#ff5252' }
+                ]);
+
+                // Recebido (a receber, em dia) vs Atrasado
+                desenharGraficoBarras('grafico-recebido-atrasado', [
+                    { rotulo: 'A Receber (em dia)', valor: retEsp - totAtr, cor: '#69f0ae' },
+                    { rotulo: 'Atrasado', valor: totAtr, cor: '#ff5252' }
+                ]);
+
+                // ===== Aba Perdas =====
+                const perdaIniEl = document.getElementById('filtro-perda-ini');
+                const perdaFimEl = document.getElementById('filtro-perda-fim');
+                const perdaIniStr = perdaIniEl ? perdaIniEl.value : '';
+                const perdaFimStr = perdaFimEl ? perdaFimEl.value : '';
+                const perdaIniDate = perdaIniStr ? parseInputDate(perdaIniStr) : null;
+                const perdaFimDate = perdaFimStr ? parseInputDate(perdaFimStr) : null;
+
+                let totalPerdas = 0, qtdPerdas = 0, hPerdas = '';
+                const perdasOrdenadas = [...(state.perdas || [])].sort((a,b) => parseInputDate(b.data) - parseInputDate(a.data));
+                perdasOrdenadas.forEach(pd => {
+                    const dPerda = parseInputDate(pd.data);
+                    if (perdaIniDate && dPerda < perdaIniDate) return;
+                    if (perdaFimDate && dPerda > perdaFimDate) return;
+                    totalPerdas += pd.valor;
+                    qtdPerdas++;
+                    hPerdas += `<tr><td>${formatDateBR(pd.data)}</td><td>${pd.clienteNome}</td><td style="color:#ff5252">${formatReal(pd.valor)}</td><td>${pd.obs || ''}</td></tr>`;
+                });
+
+                const kpiTotalPerdasEl = document.getElementById('kpi-total-perdas');
+                const kpiQtdPerdasEl = document.getElementById('kpi-qtd-perdas');
+                if (kpiTotalPerdasEl) kpiTotalPerdasEl.innerText = formatReal(totalPerdas);
+                if (kpiQtdPerdasEl) kpiQtdPerdasEl.innerText = qtdPerdas;
+                const tblPerdasEl = document.getElementById('tbl-perdas-corpo');
+                if (tblPerdasEl) tblPerdasEl.innerHTML = hPerdas || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nenhuma perda registrada nesse período.</td></tr>';
+
+                // ===== Aba Meus Gastos =====
+                const gastoDescFiltro = (document.getElementById('filtro-gasto-desc')?.value || '').toLowerCase();
+                const gastoDataFiltro = document.getElementById('filtro-gasto-data')?.value || '';
+                const mesAtualStr = `${dHj.getFullYear()}-${String(dHj.getMonth()+1).padStart(2,'0')}`;
+
+                let gastosMesAtual = 0, gastosTotalHistorico = 0, hGastos = '';
+                const gastosOrdenados = [...(state.gastos || [])].sort((a,b) => parseInputDate(b.data) - parseInputDate(a.data));
+                gastosOrdenados.forEach(g => {
+                    gastosTotalHistorico += g.valor;
+                    if (g.data && g.data.substring(0,7) === mesAtualStr) gastosMesAtual += g.valor;
+
+                    if (gastoDescFiltro && !g.desc.toLowerCase().includes(gastoDescFiltro)) return;
+                    if (gastoDataFiltro && g.data !== gastoDataFiltro) return;
+                    hGastos += `<tr><td>${formatDateBR(g.data)}</td><td>${g.desc}</td><td style="color:#ff5252">${formatReal(g.valor)}</td><td><button class="btn danger small" style="padding:2px 6px;" onclick="excluirGasto('${g.id}')">🗑</button></td></tr>`;
+                });
+
+                const kpiGastosMesEl = document.getElementById('kpi-gastos-mes');
+                const kpiGastosTotalEl = document.getElementById('kpi-gastos-total');
+                if (kpiGastosMesEl) kpiGastosMesEl.innerText = formatReal(gastosMesAtual);
+                if (kpiGastosTotalEl) kpiGastosTotalEl.innerText = formatReal(gastosTotalHistorico);
+                const tblGastosEl = document.getElementById('tbl-gastos-corpo');
+                if (tblGastosEl) tblGastosEl.innerHTML = hGastos || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nenhum gasto registrado.</td></tr>';
+
+                // Desconta os gastos do mês do "Lucro Recebido (Mês)" mostrado no Dashboard,
+                // criando um KPI de Lucro Líquido do Mês (lucro de juros - gastos do mês)
+                const kpiLucroLiquidoMesEl = document.getElementById('kpi-lucro-liquido-mes');
+                if (kpiLucroLiquidoMesEl) {
+                    const lucroLiquido = lucMes - gastosMesAtual;
+                    kpiLucroLiquidoMesEl.innerText = formatReal(lucroLiquido);
+                    kpiLucroLiquidoMesEl.style.color = lucroLiquido >= 0 ? '#69f0ae' : '#ff5252';
+                }
+
+                // ===== Aba Cobranças: visões Semana e Mês =====
+                (function renderizarCobrancasSemanaEMes() {
+                    const hojeD = new Date(); hojeD.setHours(12,0,0,0);
+                    // Início da semana = segunda-feira; fim = domingo
+                    const diaSemanaHoje = hojeD.getDay(); // 0=dom,1=seg,...6=sáb
+                    const offsetSegunda = diaSemanaHoje === 0 ? -6 : 1 - diaSemanaHoje;
+                    const inicioSemana = new Date(hojeD); inicioSemana.setDate(hojeD.getDate() + offsetSegunda);
+                    const fimSemana = new Date(inicioSemana); fimSemana.setDate(inicioSemana.getDate() + 6);
+
+                    const inicioMes = new Date(hojeD.getFullYear(), hojeD.getMonth(), 1, 12, 0, 0);
+                    const fimMes = new Date(hojeD.getFullYear(), hojeD.getMonth() + 1, 0, 12, 0, 0);
+
+                    let bucketsSemana = {}, bucketsMes = {};
+                    let totalSemana = 0, totalMes = 0;
+
+                    (state.clientes || []).forEach(c => (c.emprestimos || []).forEach(e => (e.parcelas || []).forEach(p => {
+                        const sP = parseFloat((p.valor - p.pago).toFixed(2));
+                        if (sP <= 0) return;
+                        const dVenc = parseInputDate(p.dataVencimento);
+
+                        if (dVenc >= inicioSemana && dVenc <= fimSemana) {
+                            if (!bucketsSemana[p.dataVencimento]) bucketsSemana[p.dataVencimento] = { total: 0, itens: [] };
+                            bucketsSemana[p.dataVencimento].total += sP;
+                            bucketsSemana[p.dataVencimento].itens.push({ cliente: c.nome, parcela: p.numero, valor: sP });
+                            totalSemana += sP;
+                        }
+                        if (dVenc >= inicioMes && dVenc <= fimMes) {
+                            if (!bucketsMes[p.dataVencimento]) bucketsMes[p.dataVencimento] = { total: 0, itens: [] };
+                            bucketsMes[p.dataVencimento].total += sP;
+                            bucketsMes[p.dataVencimento].itens.push({ cliente: c.nome, parcela: p.numero, valor: sP });
+                            totalMes += sP;
+                        }
+                    })));
+
+                    function montarHtmlDias(buckets) {
+                        let html = '';
+                        Object.keys(buckets).sort().forEach(dataStr => {
+                            const b = buckets[dataStr];
+                            const diaSemanaExt = getDiaSemanaCompleto(parseInputDate(dataStr));
+                            let linhas = b.itens.map(i => `<tr><td>${i.cliente}</td><td>${i.parcela}</td><td>${formatReal(i.valor)}</td></tr>`).join('');
+                            html += `<div class="cobrancas-dia-box">
+                                <div class="cobrancas-dia-header">
+                                    <strong>${diaSemanaExt}, ${formatDateBR(dataStr)}</strong>
+                                    <strong style="color:#69f0ae">${formatReal(b.total)}</strong>
+                                </div>
+                                <div class="cobrancas-dia-body">
+                                    <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Parcela</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody></table></div>
+                                </div>
+                            </div>`;
+                        });
+                        return html;
+                    }
+
+                    const semanaEl = document.getElementById('cobrancas-semana-container');
+                    if (semanaEl) semanaEl.innerHTML = montarHtmlDias(bucketsSemana) || '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nada a receber essa semana.</p>';
+                    const kpiSemanaEl = document.getElementById('kpi-receber-semana');
+                    if (kpiSemanaEl) kpiSemanaEl.innerText = formatReal(totalSemana);
+
+                    const mesEl = document.getElementById('cobrancas-mes-container');
+                    if (mesEl) mesEl.innerHTML = montarHtmlDias(bucketsMes) || '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nada a receber esse mês.</p>';
+                    const kpiMesEl = document.getElementById('kpi-receber-mes');
+                    if (kpiMesEl) kpiMesEl.innerText = formatReal(totalMes);
+                })();
+            }
+
+            document.getElementById('sync-btn').addEventListener('click', function() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+                const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", "romao_dados_backup.json");
+                document.body.appendChild(dl); dl.click(); dl.remove();
+                showToast("Cópia de segurança baixada com sucesso!", "success");
+            });
+
+            // Filtro de período da aba Perdas: padrão = Novembro mais recente até hoje
+            (function definirFiltroPadraoPerdas() {
+                const hoje = new Date();
+                let anoNovembro = hoje.getFullYear();
+                // Se ainda não passamos de novembro deste ano, usa novembro do ano anterior
+                if (hoje.getMonth() < 10) anoNovembro -= 1;
+                const iniInput = document.getElementById('filtro-perda-ini');
+                const fimInput = document.getElementById('filtro-perda-fim');
+                if (iniInput) iniInput.value = `${anoNovembro}-11-01`;
+                if (fimInput) fimInput.value = hoje.toISOString().split('T')[0];
+            })();
+            document.getElementById('filtro-perda-ini').addEventListener('change', () => renderizarTudo());
+            document.getElementById('filtro-perda-fim').addEventListener('change', () => renderizarTudo());
+
+            verificarSessao();
         });
     </script>
 </body>
